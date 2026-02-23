@@ -1,9 +1,8 @@
-// Vercel Serverless Function - Anthropic API Proxy
-// This keeps your API key secure on the server
+// Vercel Serverless Function - OpenAI API Proxy
+// File: api/generate.js
 
 export default async function handler(req, res) {
   // ── CORS headers ─────────────────────────────────────────────
-  // Restrict to your actual domain in production; use '*' only for local dev
   const allowedOrigins = [
     'https://tools.peopleplex.one',
     'https://peopleplex-tools.vercel.app',
@@ -17,20 +16,20 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // ── Handle CORS preflight FIRST (before POST check) ──────────
+  // ── Handle CORS preflight FIRST ──────────────────────────────
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // ── Only allow POST after OPTIONS is handled ─────────────────
+  // Only allow POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
     // Accept EITHER format from frontend:
-    //   Format A (preferred): { messages: [...], model: "...", max_tokens: N }
-    //   Format B (legacy):    { prompt: "...", max_tokens: N }
+    //   Format A (current frontend): { messages: [...], model: "...", max_tokens: N }
+    //   Format B (legacy):            { prompt: "...", max_tokens: N }
     const { messages, prompt, model, max_tokens = 2000 } = req.body;
 
     // Build the messages array — support both formats
@@ -43,45 +42,63 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Either "messages" array or "prompt" string is required' });
     }
 
-    // Get API key from environment variable
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    // Get API key from environment
+    const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey) {
-      console.error('ANTHROPIC_API_KEY not set');
-      return res.status(500).json({ error: 'API key not configured' });
-    }
-
-    // Use model from request, or fall back to a sensible default
-    const apiModel = model || 'claude-sonnet-4-20250514';
-
-    // Call Anthropic API
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: apiModel,
-        max_tokens: max_tokens,
-        messages: apiMessages,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Anthropic API error:', error);
-      return res.status(response.status).json({
-        error: 'API call failed',
-        details: error,
+      console.error('OPENAI_API_KEY environment variable not set');
+      return res.status(500).json({
+        error: 'API key not configured',
+        message: 'Please add OPENAI_API_KEY to Vercel environment variables'
       });
     }
 
-    const data = await response.json();
+    console.log('Calling OpenAI API...');
 
-    // Return the response
-    return res.status(200).json(data);
+    // Call OpenAI API
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: apiMessages,
+        max_tokens: max_tokens,
+        temperature: 0.7,
+      }),
+    });
+
+    const responseText = await response.text();
+    console.log('OpenAI API response status:', response.status);
+
+    if (!response.ok) {
+      console.error('OpenAI API error:', responseText);
+      return res.status(response.status).json({
+        error: 'API call failed',
+        status: response.status,
+        details: responseText,
+      });
+    }
+
+    const data = JSON.parse(responseText);
+    console.log('Successfully generated response');
+
+    // Transform OpenAI response to match Anthropic format
+    // (so the frontend code doesn't need to change)
+    const transformedResponse = {
+      content: [
+        {
+          type: 'text',
+          text: data.choices[0].message.content
+        }
+      ],
+      model: data.model,
+      usage: data.usage
+    };
+
+    return res.status(200).json(transformedResponse);
 
   } catch (error) {
     console.error('Error in API proxy:', error);
