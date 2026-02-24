@@ -56,12 +56,14 @@ export default async function handler(req, res) {
       // ══════════════════════════════════════════════════════════
       console.log('Using Google Gemini API (free)...');
 
-      const geminiModel = 'gemini-2.0-flash-lite';
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`;
+      const geminiModel = 'gemini-2.0-flash-001';
+      const url = `https://generativelanguage.googleapis.com/v1/models/${geminiModel}:generateContent?key=${geminiKey}`;
 
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           contents: [
             {
