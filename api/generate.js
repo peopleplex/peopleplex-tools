@@ -1,6 +1,5 @@
 // Vercel Serverless Function - Multi-Provider AI Proxy
-// Supports: Google Gemini (FREE), Anthropic Claude, OpenAI GPT
-// Priority: GEMINI_API_KEY → ANTHROPIC_API_KEY → OPENAI_API_KEY
+// Priority: GROQ_API_KEY (free, fast) → GEMINI_API_KEY → ANTHROPIC_API_KEY → OPENAI_API_KEY
 
 export default async function handler(req, res) {
   // ── CORS headers ─────────────────────────────────────────────
@@ -17,19 +16,12 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // ── Handle CORS preflight FIRST ──────────────────────────────
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
     const { messages, prompt, model, max_tokens = 2000 } = req.body;
 
-    // Build the prompt text from whatever format frontend sends
     let promptText = '';
     let apiMessages = [];
 
@@ -43,37 +35,59 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Either "messages" array or "prompt" string is required' });
     }
 
-    // ── Detect which API key is available ─────────────────────
+    const groqKey = process.env.GROQ_API_KEY;
     const geminiKey = process.env.GEMINI_API_KEY;
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
     const openaiKey = process.env.OPENAI_API_KEY;
 
     let resultText = '';
 
-    if (geminiKey) {
+    if (groqKey) {
       // ══════════════════════════════════════════════════════════
-      // GOOGLE GEMINI (FREE TIER)
+      // GROQ — 100% FREE, No Credit Card, Ultra Fast
+      // Free tier: 6,000 tokens/min, 500,000 tokens/day
       // ══════════════════════════════════════════════════════════
-      console.log('Using Google Gemini API (free)...');
+      console.log('Using Groq API (free)...');
+
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${groqKey}`,
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',   // Best free model on Groq
+          messages: apiMessages,
+          max_tokens: max_tokens,
+          temperature: 0.7,
+        }),
+      });
+
+      const responseText = await response.text();
+
+      if (!response.ok) {
+        console.error('Groq API error:', responseText);
+        return res.status(response.status).json({ error: 'Groq API call failed', details: responseText });
+      }
+
+      const data = JSON.parse(responseText);
+      resultText = data.choices[0].message.content;
+
+    } else if (geminiKey) {
+      // ══════════════════════════════════════════════════════════
+      // GOOGLE GEMINI
+      // ══════════════════════════════════════════════════════════
+      console.log('Using Google Gemini API...');
 
       const geminiModel = 'gemini-2.0-flash-001';
       const url = `https://generativelanguage.googleapis.com/v1/models/${geminiModel}:generateContent?key=${geminiKey}`;
 
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: promptText }],
-            },
-          ],
-          generationConfig: {
-            maxOutputTokens: max_tokens,
-            temperature: 0.7,
-          },
+          contents: [{ parts: [{ text: promptText }] }],
+          generationConfig: { maxOutputTokens: max_tokens, temperature: 0.7 },
         }),
       });
 
@@ -81,19 +95,13 @@ export default async function handler(req, res) {
 
       if (!response.ok) {
         console.error('Gemini API error:', responseText);
-        return res.status(response.status).json({
-          error: 'Gemini API call failed',
-          details: responseText,
-        });
+        return res.status(response.status).json({ error: 'Gemini API call failed', details: responseText });
       }
 
       const data = JSON.parse(responseText);
-
-      if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
-        console.error('Unexpected Gemini response:', responseText);
+      if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
         return res.status(500).json({ error: 'Unexpected Gemini response format' });
       }
-
       resultText = data.candidates[0].content.parts[0].text;
 
     } else if (anthropicKey) {
@@ -110,21 +118,16 @@ export default async function handler(req, res) {
           'x-api-key': anthropicKey,
           'anthropic-version': '2023-06-01',
         },
-        body: JSON.stringify({
-          model: apiModel,
-          max_tokens: max_tokens,
-          messages: apiMessages,
-        }),
+        body: JSON.stringify({ model: apiModel, max_tokens, messages: apiMessages }),
       });
 
       if (!response.ok) {
         const error = await response.text();
-        console.error('Anthropic API error:', error);
         return res.status(response.status).json({ error: 'API call failed', details: error });
       }
 
+      // Anthropic already returns the right format — return directly
       const data = await response.json();
-      // Anthropic already returns the format frontend expects
       return res.status(200).json(data);
 
     } else if (openaiKey) {
@@ -142,15 +145,13 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: apiMessages,
-          max_tokens: max_tokens,
+          max_tokens,
           temperature: 0.7,
         }),
       });
 
       const responseText = await response.text();
-
       if (!response.ok) {
-        console.error('OpenAI API error:', responseText);
         return res.status(response.status).json({ error: 'API call failed', details: responseText });
       }
 
@@ -160,20 +161,17 @@ export default async function handler(req, res) {
     } else {
       return res.status(500).json({
         error: 'No API key configured',
-        message: 'Add GEMINI_API_KEY (free), ANTHROPIC_API_KEY, or OPENAI_API_KEY to Vercel environment variables',
+        message: 'Add GROQ_API_KEY (free!), GEMINI_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY to Vercel environment variables',
       });
     }
 
-    // ── Return in Anthropic-compatible format (frontend expects this) ──
+    // Return in Anthropic-compatible format (frontend expects this)
     return res.status(200).json({
       content: [{ type: 'text', text: resultText }],
     });
 
   } catch (error) {
     console.error('Error in API proxy:', error);
-    return res.status(500).json({
-      error: 'Internal server error',
-      message: error.message,
-    });
+    return res.status(500).json({ error: 'Internal server error', message: error.message });
   }
 }
