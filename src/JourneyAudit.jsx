@@ -9,8 +9,9 @@ import {
   updateProfile,
   updatePassword,
   updateEmail,
+  sendEmailVerification,
 } from "firebase/auth";
-import { doc, setDoc, collection, getDocs } from "firebase/firestore";
+import { doc, setDoc, collection, getDocs, getDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
 
 const BOOKING_LINK = "https://iamhariharan.com/training-institutes";
@@ -2864,11 +2865,38 @@ function AuthScreen() {
     setLoading(true);
     setError(null);
     try {
+      let userDetails;
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, email, password);
+        const userCred = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password,
+        );
+        userDetails = userCred.user;
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCred = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password,
+        );
+        userDetails = userCred.user;
+
+        // Send email verification on first signup
+        await sendEmailVerification(userDetails);
+        alert(
+          "A verification link has been sent to your email. Please verify to fully secure your account.",
+        );
       }
+
+      // Ensure user profile document exists in Firestore database
+      await setDoc(
+        doc(db, "users", userDetails.uid),
+        {
+          email: userDetails.email,
+          lastLoginAt: new Date().toISOString(),
+        },
+        { merge: true },
+      );
     } catch (err) {
       setError(err.message);
     } finally {
@@ -2881,7 +2909,18 @@ function AuthScreen() {
     setError(null);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const userCred = await signInWithPopup(auth, provider);
+
+      // Ensure user profile document exists in Firestore database
+      await setDoc(
+        doc(db, "users", userCred.user.uid),
+        {
+          email: userCred.user.email,
+          displayName: userCred.user.displayName,
+          lastLoginAt: new Date().toISOString(),
+        },
+        { merge: true },
+      );
     } catch (err) {
       setError(err.message);
     } finally {
