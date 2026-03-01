@@ -1693,14 +1693,15 @@ Business Name: ${business.businessName}
 Industry: ${business.industry}
 Location: ${business.location}
 Additional Notes: ${business.additionalNotes || "None"}
-Customer Personas: ${personas.map((p) => p.name + " (" + p.archetype + ")").join(", ")}
-Audit Scores: ${scoresSummary}
-Weakest Stage: ${weakest.label} (${weakest.pct}%)
+
+Overall Business Journey Score: ${totalPct}%
 Strongest Stage: ${strongest.label} (${strongest.pct}%)
-Overall Score: ${totalPct}%
+Weakest Stage: ${weakest.label} (${weakest.pct}%)
+
+IMPORTANT: Do NOT confuse a stage score with the Overall Business Journey Score. The overall score is exactly ${totalPct}%.
 
 Write a personalised 3-paragraph insight report (no headers, just plain paragraphs).
-Para 1: What's working and why it matters for retaining customers.
+Para 1: State the Overall Business Journey Score. Describe what their Strongest Stage is and why it's a good foundation.
 Para 2: The biggest gap (weakest stage) and specifically what it is costing them right now.
 Para 3: The single most important thing to fix first and why it will have the biggest impact.
 Be specific, direct, and actionable. Under 200 words total.`,
@@ -2407,9 +2408,9 @@ The single most important fix: focus all energy on the ${weakest.label} stage fi
                 lineHeight: 1.5,
               }}
             >
-              💡 <strong style={{ color: "#aaa" }}>Download</strong> saves an
-              HTML file — open in browser and use <em>Print → Save as PDF</em>{" "}
-              for a perfect PDF copy.
+              💡 <strong style={{ color: "#aaa" }}>Share Report URL</strong>{" "}
+              generates a unique, public link you can instantly send to your
+              team or stakeholders so they can view the full breakdown.
             </div>
           </div>
 
