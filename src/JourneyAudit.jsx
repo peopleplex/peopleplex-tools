@@ -722,6 +722,9 @@ function StepDescribe({ onNext }) {
               industry,
               description,
               location,
+              websiteUrl,
+              gmbUrl,
+              socialUrl,
               pricingTier,
               additionalNotes,
             })
@@ -1732,8 +1735,8 @@ IMPORTANT: Do NOT confuse a stage score with the Overall Business Journey Score.
 
 Write a personalised 3-paragraph insight report (no headers, just plain paragraphs).
 Para 1: State the Overall Business Journey Score. Describe what their Strongest Stage is and why it's a good foundation.
-Para 2: The biggest gap (weakest stage) and specifically what it is costing them right now.
-Para 3: The single most important thing to fix first and why it will have the biggest impact.
+Para 2: The biggest gap (weakest stage) and specifically what it is costing them right now. Critically analyze their provided URLs (Website, GMB, Social Media) in the context of this weakest stage. If a URL is missing or weak, call it out as a contributor to the low score.
+Para 3: The single most important thing to fix first and why it will have the biggest impact, directly referencing how they should improve their online assets based on those links.
 Be specific, direct, and actionable. Under 200 words total.`,
             },
           ],
@@ -1928,15 +1931,14 @@ The single most important fix: focus all energy on the ${weakest.label} stage fi
             </div>
 
             <!-- AI Insight -->
-            ${
-              aiInsight
-                ? `
+            ${aiInsight
+        ? `
   <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:24px;">
     <div style="font-size:13px;font-weight:700;color:#FF6B35;margin-bottom:14px;">💡 Personalised Gap Analysis</div>
     <p style="font-size:14px;color:#ccc;line-height:1.8;">${aiInsight.replace(/\n\n/g, '</p><p style="font-size:14px;color:#ccc;line-height:1.8;margin-top:12px;">')}</p>
   </div>`
-                : ""
-            }
+        : ""
+      }
 
             <!-- Detailed Checklist -->
             <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:24px;">
@@ -3270,8 +3272,8 @@ function UserDashboard({ onClose, onLoadAudit }) {
     const YOUR_WHATSAPP = "919566812543"; // REPLACE with your number
     const msg = encodeURIComponent(
       `Hi ${lead.name}, I saw you completed the Customer Journey Audit on PeoplePlex.com.\n\n` +
-        `Your score was ${lead.overallScore}% — your biggest gap is the ${lead.weakestStage} stage.\n\n` +
-        `I have a specific idea for how to fix that.Are you free for a quick 15 - minute call this week ? `,
+      `Your score was ${lead.overallScore}% — your biggest gap is the ${lead.weakestStage} stage.\n\n` +
+      `I have a specific idea for how to fix that.Are you free for a quick 15 - minute call this week ? `,
     );
     window.open(
       `https://wa.me/${lead.phone.replace(/[^0-9]/g, "")}?text=${msg}`,
