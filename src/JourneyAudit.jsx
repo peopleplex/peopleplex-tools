@@ -4618,6 +4618,7 @@ export default function App() {
         }
         .nav-btn-icon {
           font-size: 20px;
+          display: none; /* Hidden by default on desktop */
         }
         @media (max-width: 768px) {
           .layout-container {
@@ -4650,6 +4651,9 @@ export default function App() {
           }
           .main-content {
             padding-bottom: 70px;
+          }
+          .nav-btn-icon {
+            display: block; /* Show icons on mobile bottom nav */
           }
         }
       `}</style>
