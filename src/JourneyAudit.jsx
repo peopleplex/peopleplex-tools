@@ -10,6 +10,7 @@ import {
   updatePassword,
   updateEmail,
   sendEmailVerification,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { doc, setDoc, collection, getDocs, getDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
@@ -3025,12 +3026,36 @@ function AutomationRecommendations({ audit, onBack }) {
 // ══════════════════════════════════════════════════════════════
 // AUTHENTICATION SCREEN
 // ══════════════════════════════════════════════════════════════
+function getFriendlyErrorMessage(err) {
+  if (!err || !err.code) return err?.message || "An unknown error occurred.";
+  switch (err.code) {
+    case "auth/invalid-credential":
+      return "Incorrect email or password. Please try again.";
+    case "auth/user-not-found":
+      return "No account registered with this email address.";
+    case "auth/wrong-password":
+      return "Wrong password. Please try again or reset it.";
+    case "auth/email-already-in-use":
+      return "An account with this email already exists.";
+    case "auth/weak-password":
+      return "Please choose a stronger password (at least 6 characters).";
+    case "auth/too-many-requests":
+      return "Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.";
+    case "auth/invalid-email":
+      return "Please enter a valid email address.";
+    default:
+      return err.message;
+  }
+}
+
 function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [resetSent, setResetSent] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -3070,7 +3095,7 @@ function AuthScreen() {
         { merge: true },
       );
     } catch (err) {
-      setError(err.message);
+      setError(getFriendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -3094,7 +3119,7 @@ function AuthScreen() {
         { merge: true },
       );
     } catch (err) {
-      setError(err.message);
+      setError(getFriendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -3130,7 +3155,11 @@ function AuthScreen() {
             marginBottom: 8,
           }}
         >
-          {isLogin ? "Welcome Back" : "Create Account"}
+          {isForgotPassword
+            ? "Reset Password"
+            : isLogin
+              ? "Welcome Back"
+              : "Create Account"}
         </h2>
         <p
           style={{
@@ -3140,10 +3169,28 @@ function AuthScreen() {
             marginBottom: 24,
           }}
         >
-          {isLogin
-            ? "Log in to view your audits."
-            : "Sign up to start saving your audits."}
+          {isForgotPassword
+            ? "Enter your email to receive a password reset link."
+            : isLogin
+              ? "Log in to view your audits."
+              : "Sign up to start saving your audits."}
         </p>
+
+        {resetSent && (
+          <div
+            style={{
+              background: "#22c55e20",
+              color: "#22c55e",
+              padding: "10px",
+              borderRadius: 8,
+              fontSize: 13,
+              marginBottom: 16,
+              textAlign: "center",
+            }}
+          >
+            Password reset link sent! Check your email.
+          </div>
+        )}
 
         {error && (
           <div
@@ -3192,99 +3239,194 @@ function AuthScreen() {
               }}
             />
           </div>
-          <div>
-            <label
+          {!isForgotPassword && (
+            <div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 6,
+                }}
+              >
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: MUTED,
+                  }}
+                >
+                  Password
+                </label>
+              </div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  borderRadius: 10,
+                  border: `1px solid ${BORDER} `,
+                  background: DARK,
+                  color: WHITE,
+                  fontSize: 15,
+                }}
+              />
+            </div>
+          )}
+          {isForgotPassword ? (
+            <button
+              type="button"
+              onClick={async () => {
+                if (!email.trim()) {
+                  setError("Please enter your email address first.");
+                  return;
+                }
+                setLoading(true);
+                setError(null);
+                try {
+                  await sendPasswordResetEmail(auth, email);
+                  setResetSent(true);
+                } catch (err) {
+                  setError(getFriendlyErrorMessage(err));
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
               style={{
-                display: "block",
-                fontSize: 12,
+                marginTop: 8,
+                width: "100%",
+                padding: "14px",
+                borderRadius: 10,
+                border: "none",
+                background: ORANGE,
+                color: "#000",
                 fontWeight: 700,
-                color: MUTED,
-                marginBottom: 6,
+                fontSize: 15,
+                cursor: loading ? "wait" : "pointer",
+                transition: "all .2s",
               }}
             >
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+              {loading ? "Sending..." : "Send Reset Link"}
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={loading}
               style={{
+                marginTop: 8,
                 width: "100%",
-                padding: "12px 16px",
+                padding: "14px",
                 borderRadius: 10,
-                border: `1px solid ${BORDER} `,
-                background: DARK,
-                color: WHITE,
+                border: "none",
+                background: ORANGE,
+                color: "#000",
+                fontWeight: 700,
                 fontSize: 15,
+                cursor: loading ? "wait" : "pointer",
+                transition: "all .2s",
               }}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              marginTop: 8,
-              width: "100%",
-              padding: "14px",
-              borderRadius: 10,
-              border: "none",
-              background: ORANGE,
-              color: "#000",
-              fontWeight: 700,
-              fontSize: 15,
-              cursor: loading ? "wait" : "pointer",
-              transition: "all .2s",
-            }}
-          >
-            {loading ? "Please wait..." : isLogin ? "Log In" : "Sign Up"}
-          </button>
+            >
+              {loading ? "Please wait..." : isLogin ? "Log In" : "Sign Up"}
+            </button>
+          )}
+
+          {isLogin && !isForgotPassword && (
+            <div
+              onClick={() => {
+                setIsForgotPassword(true);
+                setError(null);
+                setResetSent(false);
+              }}
+              style={{
+                fontSize: 12,
+                color: ORANGE,
+                textAlign: "center",
+                cursor: "pointer",
+                fontWeight: 700,
+                marginTop: 8,
+              }}
+            >
+              Forgot your password?
+            </div>
+          )}
+
+          {isForgotPassword && (
+            <div
+              onClick={() => {
+                setIsForgotPassword(false);
+                setError(null);
+                setResetSent(false);
+              }}
+              style={{
+                fontSize: 12,
+                color: MUTED,
+                textAlign: "center",
+                cursor: "pointer",
+                marginTop: 8,
+              }}
+            >
+              ← Back to Login
+            </div>
+          )}
         </form>
 
-        <div
-          style={{ display: "flex", alignItems: "center", margin: "20px 0" }}
-        >
-          <div style={{ flex: 1, height: 1, background: BORDER }} />
-          <span
-            style={{
-              margin: "0 10px",
-              fontSize: 12,
-              fontWeight: 700,
-              color: MUTED,
-            }}
-          >
-            OR
-          </span>
-          <div style={{ flex: 1, height: 1, background: BORDER }} />
-        </div>
+        {!isForgotPassword && (
+          <>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                margin: "20px 0",
+              }}
+            >
+              <div style={{ flex: 1, height: 1, background: BORDER }} />
+              <span
+                style={{
+                  margin: "0 10px",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: MUTED,
+                }}
+              >
+                OR
+              </span>
+              <div style={{ flex: 1, height: 1, background: BORDER }} />
+            </div>
 
-        <button
-          onClick={handleGoogleLogin}
-          disabled={loading}
-          style={{
-            width: "100%",
-            padding: "14px",
-            borderRadius: 10,
-            border: `1px solid ${BORDER} `,
-            background: CARD,
-            color: WHITE,
-            fontWeight: 700,
-            fontSize: 15,
-            cursor: loading ? "wait" : "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 10,
-            transition: "all .2s",
-          }}
-        >
-          <img
-            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-            width="20"
-            alt="Google"
-          />
-          Continue with Google
-        </button>
+            <button
+              onClick={handleGoogleLogin}
+              disabled={loading}
+              style={{
+                width: "100%",
+                padding: "14px",
+                borderRadius: 10,
+                border: `1px solid ${BORDER} `,
+                background: CARD,
+                color: WHITE,
+                fontWeight: 700,
+                fontSize: 15,
+                cursor: loading ? "wait" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10,
+                transition: "all .2s",
+              }}
+            >
+              <img
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                width="20"
+                alt="Google"
+              />
+              Continue with Google
+            </button>
+          </>
+        )}
 
         <p
           style={{
@@ -3294,13 +3436,19 @@ function AuthScreen() {
             marginTop: 24,
           }}
         >
-          {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-          <span
-            onClick={() => setIsLogin(!isLogin)}
-            style={{ color: ORANGE, cursor: "pointer", fontWeight: 700 }}
-          >
-            {isLogin ? "Sign Up" : "Log In"}
-          </span>
+          {isForgotPassword ? (
+            <></>
+          ) : (
+            <>
+              {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+              <span
+                onClick={() => setIsLogin(!isLogin)}
+                style={{ color: ORANGE, cursor: "pointer", fontWeight: 700 }}
+              >
+                {isLogin ? "Sign Up" : "Log In"}
+              </span>
+            </>
+          )}
         </p>
       </div>
     </div>
