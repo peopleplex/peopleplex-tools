@@ -1754,7 +1754,7 @@ Write a personalised insight report based on their weakest stage and the URLs pr
         if (match) {
           try {
             parsed = JSON.parse(match[0]);
-          } catch (e) {}
+          } catch (e) { }
         }
       }
       if (parsed && parsed.websiteReport) {
@@ -1949,16 +1949,15 @@ Write a personalised insight report based on their weakest stage and the URLs pr
             </div>
 
             <!-- AI Insight -->
-            ${
-              !aiInsight
-                ? ""
-                : typeof aiInsight === "string"
-                  ? `
+            ${!aiInsight
+        ? ""
+        : typeof aiInsight === "string"
+          ? `
               <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:24px;">
                 <div style="font-size:13px;font-weight:700;color:#FF6B35;margin-bottom:14px;">💡 Personalised Gap Analysis</div>
                 <p style="font-size:14px;color:#ccc;line-height:1.8;">${aiInsight.replace(/\n\n/g, '</p><p style="font-size:14px;color:#ccc;line-height:1.8;margin-top:12px;">')}</p>
               </div>`
-                  : `
+          : `
               <div style="margin-bottom:24px;">
                 <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:16px;">
                   <div style="font-size:13px;font-weight:700;color:#FF6B35;margin-bottom:10px;">🌐 Website & Online Presence Report</div>
@@ -1973,7 +1972,7 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                   <p style="font-size:14px;color:#ccc;line-height:1.8;margin:0;">${aiInsight.nextPriorityStep}</p>
                 </div>
               </div>`
-            }
+      }
 
             <!-- Detailed Checklist -->
             <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:24px;">
@@ -3188,7 +3187,8 @@ function AuthScreen() {
               textAlign: "center",
             }}
           >
-            Password reset link sent! Check your email.
+            If a native account exists with this email, a reset link was sent! (Check your spam).<br /><br />
+            <i>Note: If you usually click "Continue with Google", you do not have a password to reset! Please log in with Google instead.</i>
           </div>
         )}
 
@@ -3554,8 +3554,8 @@ function UserDashboard({ onClose, onLoadAudit }) {
     const YOUR_WHATSAPP = "919566812543"; // REPLACE with your number
     const msg = encodeURIComponent(
       `Hi ${lead.name}, I saw you completed the Customer Journey Audit on PeoplePlex.com.\n\n` +
-        `Your score was ${lead.overallScore}% — your biggest gap is the ${lead.weakestStage} stage.\n\n` +
-        `I have a specific idea for how to fix that.Are you free for a quick 15 - minute call this week ? `,
+      `Your score was ${lead.overallScore}% — your biggest gap is the ${lead.weakestStage} stage.\n\n` +
+      `I have a specific idea for how to fix that.Are you free for a quick 15 - minute call this week ? `,
     );
     window.open(
       `https://wa.me/${lead.phone.replace(/[^0-9]/g, "")}?text=${msg}`,
