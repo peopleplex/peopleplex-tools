@@ -1733,17 +1733,34 @@ Weakest Stage: ${weakest.label} (${weakest.pct}%)
 
 IMPORTANT: Do NOT confuse a stage score with the Overall Business Journey Score. The overall score is exactly ${totalPct}%.
 
-Write a personalised 3-paragraph insight report (no headers, just plain paragraphs).
-Para 1: State the Overall Business Journey Score. Describe what their Strongest Stage is and why it's a good foundation.
-Para 2: The biggest gap (weakest stage) and specifically what it is costing them right now. Critically analyze their provided URLs (Website, GMB, Social Media) in the context of this weakest stage. If a URL is missing or weak, call it out as a contributor to the low score.
-Para 3: The single most important thing to fix first and why it will have the biggest impact, directly referencing how they should improve their online assets based on those links.
-Be specific, direct, and actionable. Under 200 words total.`,
+Write a personalised insight report based on their weakest stage and the URLs provided. Return EXACTLY this JSON structure (no markdown borders, just the raw JSON object):
+{
+  "websiteReport": "A critical analysis of their Website Structure, Content, SEO and overall online presence strictly based on the URLs provided. If URLs are weak or missing, call it out.",
+  "keyTakeaways": "A paragraph outlining the biggest gap (weakest stage) and specifically what it is costing them right now.",
+  "nextPriorityStep": "A paragraph stating the single most important thing to fix first and why it will have the biggest impact."
+}`,
             },
           ],
         }),
       });
       const data = await res.json();
-      setAiInsight(data.content?.[0]?.text || getFallbackInsight());
+      const txt = data.content?.[0]?.text || "";
+      let parsed = null;
+      try {
+        parsed = JSON.parse(txt);
+      } catch (err) {
+        const match = txt.match(/\{[\s\S]*\}/);
+        if (match) {
+          try {
+            parsed = JSON.parse(match[0]);
+          } catch (e) {}
+        }
+      }
+      if (parsed && parsed.websiteReport) {
+        setAiInsight(parsed);
+      } else {
+        setAiInsight(getFallbackInsight());
+      }
     } catch (e) {
       setAiInsight(getFallbackInsight());
     } finally {
@@ -1752,11 +1769,11 @@ Be specific, direct, and actionable. Under 200 words total.`,
   }
 
   function getFallbackInsight() {
-    return `Your ${strongest.label} stage is your strongest asset at ${strongest.pct}% — this means customers who reach this point have a good experience and are more likely to convert. This is a solid foundation to build on.
-
-However, your ${weakest.label} stage at ${weakest.pct}% is where you're losing customers silently. At this stage, potential customers are evaluating whether to trust you — and most are leaving before making contact. Every customer lost here is revenue you never see.
-
-The single most important fix: focus all energy on the ${weakest.label} stage first. Even a 20% improvement here can significantly increase the number of customers who reach out — without spending more on ads or marketing.`;
+    return {
+      websiteReport: `Because we don't have detailed metrics for your links yet, we recommend manually reviewing the user experience on your site and social pages. Ensure your strongest asset (${strongest.label} at ${strongest.pct}%) is visible everywhere.`,
+      keyTakeaways: `Your ${weakest.label} stage at ${weakest.pct}% is where you're losing customers silently. At this stage, potential customers are evaluating whether to trust you — and most are leaving before making contact. Every customer lost here is revenue you never see.`,
+      nextPriorityStep: `Focus all energy on the ${weakest.label} stage first. Even a 20% improvement here can significantly increase the number of customers who reach out — without spending more on ads or marketing.`,
+    };
   }
 
   // ── Build report HTML string (used for both download and email) ──
@@ -1931,14 +1948,31 @@ The single most important fix: focus all energy on the ${weakest.label} stage fi
             </div>
 
             <!-- AI Insight -->
-            ${aiInsight
-        ? `
-  <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:24px;">
-    <div style="font-size:13px;font-weight:700;color:#FF6B35;margin-bottom:14px;">💡 Personalised Gap Analysis</div>
-    <p style="font-size:14px;color:#ccc;line-height:1.8;">${aiInsight.replace(/\n\n/g, '</p><p style="font-size:14px;color:#ccc;line-height:1.8;margin-top:12px;">')}</p>
-  </div>`
-        : ""
-      }
+            ${
+              !aiInsight
+                ? ""
+                : typeof aiInsight === "string"
+                  ? `
+              <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:24px;">
+                <div style="font-size:13px;font-weight:700;color:#FF6B35;margin-bottom:14px;">💡 Personalised Gap Analysis</div>
+                <p style="font-size:14px;color:#ccc;line-height:1.8;">${aiInsight.replace(/\n\n/g, '</p><p style="font-size:14px;color:#ccc;line-height:1.8;margin-top:12px;">')}</p>
+              </div>`
+                  : `
+              <div style="margin-bottom:24px;">
+                <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:16px;">
+                  <div style="font-size:13px;font-weight:700;color:#FF6B35;margin-bottom:10px;">🌐 Website & Online Presence Report</div>
+                  <p style="font-size:14px;color:#ccc;line-height:1.8;margin:0;">${aiInsight.websiteReport}</p>
+                </div>
+                <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:16px;">
+                  <div style="font-size:13px;font-weight:700;color:#FF6B35;margin-bottom:10px;">💡 Key Takeaways</div>
+                  <p style="font-size:14px;color:#ccc;line-height:1.8;margin:0;">${aiInsight.keyTakeaways}</p>
+                </div>
+                <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;">
+                  <div style="font-size:13px;font-weight:700;color:#FF6B35;margin-bottom:10px;">🚀 Next Priority Step</div>
+                  <p style="font-size:14px;color:#ccc;line-height:1.8;margin:0;">${aiInsight.nextPriorityStep}</p>
+                </div>
+              </div>`
+            }
 
             <!-- Detailed Checklist -->
             <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:24px;">
@@ -2343,36 +2377,136 @@ The single most important fix: focus all energy on the ${weakest.label} stage fi
           {/* AI Insight Card */}
           <div
             style={{
-              background: CARD,
-              border: `1px solid ${BORDER} `,
-              borderRadius: 16,
-              padding: 24,
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
               marginBottom: 16,
             }}
           >
-            <div
-              style={{
-                fontSize: 15,
-                fontWeight: 700,
-                color: ORANGE,
-                marginBottom: 14,
-              }}
-            >
-              💡 Your Personalised Gap Analysis
-            </div>
-            {aiInsight?.split("\n\n").map((para, i) => (
-              <p
-                key={i}
+            {typeof aiInsight === "string" ? (
+              <div
                 style={{
-                  fontSize: 14,
-                  color: "#ccc",
-                  lineHeight: 1.8,
-                  margin: i > 0 ? "12px 0 0" : 0,
+                  background: CARD,
+                  border: `1px solid ${BORDER}`,
+                  borderRadius: 16,
+                  padding: 24,
                 }}
               >
-                {para}
-              </p>
-            ))}
+                <div
+                  style={{
+                    fontSize: 15,
+                    fontWeight: 700,
+                    color: ORANGE,
+                    marginBottom: 14,
+                  }}
+                >
+                  💡 Personalised Gap Analysis
+                </div>
+                {aiInsight.split("\n\n").map((para, i) => (
+                  <p
+                    key={i}
+                    style={{
+                      fontSize: 14,
+                      color: "#ccc",
+                      lineHeight: 1.8,
+                      margin: i > 0 ? "12px 0 0" : 0,
+                    }}
+                  >
+                    {para}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <>
+                <div
+                  style={{
+                    background: CARD,
+                    border: `1px solid ${BORDER}`,
+                    borderRadius: 16,
+                    padding: 24,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: ORANGE,
+                      marginBottom: 10,
+                    }}
+                  >
+                    🌐 Website & Online Presence Report
+                  </div>
+                  <p
+                    style={{
+                      fontSize: 14,
+                      color: "#ccc",
+                      lineHeight: 1.8,
+                      margin: 0,
+                    }}
+                  >
+                    {aiInsight?.websiteReport}
+                  </p>
+                </div>
+                <div
+                  style={{
+                    background: CARD,
+                    border: `1px solid ${BORDER}`,
+                    borderRadius: 16,
+                    padding: 24,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: ORANGE,
+                      marginBottom: 10,
+                    }}
+                  >
+                    💡 Key Takeaways
+                  </div>
+                  <p
+                    style={{
+                      fontSize: 14,
+                      color: "#ccc",
+                      lineHeight: 1.8,
+                      margin: 0,
+                    }}
+                  >
+                    {aiInsight?.keyTakeaways}
+                  </p>
+                </div>
+                <div
+                  style={{
+                    background: CARD,
+                    border: `1px solid ${BORDER}`,
+                    borderRadius: 16,
+                    padding: 24,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: ORANGE,
+                      marginBottom: 10,
+                    }}
+                  >
+                    🚀 Next Priority Step
+                  </div>
+                  <p
+                    style={{
+                      fontSize: 14,
+                      color: "#ccc",
+                      lineHeight: 1.8,
+                      margin: 0,
+                    }}
+                  >
+                    {aiInsight?.nextPriorityStep}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Report Actions */}
@@ -3272,8 +3406,8 @@ function UserDashboard({ onClose, onLoadAudit }) {
     const YOUR_WHATSAPP = "919566812543"; // REPLACE with your number
     const msg = encodeURIComponent(
       `Hi ${lead.name}, I saw you completed the Customer Journey Audit on PeoplePlex.com.\n\n` +
-      `Your score was ${lead.overallScore}% — your biggest gap is the ${lead.weakestStage} stage.\n\n` +
-      `I have a specific idea for how to fix that.Are you free for a quick 15 - minute call this week ? `,
+        `Your score was ${lead.overallScore}% — your biggest gap is the ${lead.weakestStage} stage.\n\n` +
+        `I have a specific idea for how to fix that.Are you free for a quick 15 - minute call this week ? `,
     );
     window.open(
       `https://wa.me/${lead.phone.replace(/[^0-9]/g, "")}?text=${msg}`,
