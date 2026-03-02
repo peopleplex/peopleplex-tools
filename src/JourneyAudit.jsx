@@ -457,6 +457,9 @@ function StepDescribe({ onNext }) {
   const [industry, setIndustry] = useState("");
   const [description, setDesc] = useState("");
   const [location, setLocation] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [gmbUrl, setGmbUrl] = useState("");
+  const [socialUrl, setSocialUrl] = useState("");
   const [pricingTier, setPricing] = useState(null);
   const [additionalNotes, setAdditionalNotes] = useState("");
 
@@ -527,6 +530,24 @@ function StepDescribe({ onNext }) {
           placeholder="e.g., Chennai, India or Online-only"
           value={location}
           onChange={setLocation}
+        />
+        <Input
+          label="Website URL (Optional)"
+          placeholder="https://example.com"
+          value={websiteUrl}
+          onChange={setWebsiteUrl}
+        />
+        <Input
+          label="Google My Business (GMB) URL (Optional)"
+          placeholder="https://maps.app.goo.gl/..."
+          value={gmbUrl}
+          onChange={setGmbUrl}
+        />
+        <Input
+          label="Social Media URL (Optional)"
+          placeholder="https://instagram.com/yourbrand"
+          value={socialUrl}
+          onChange={setSocialUrl}
         />
 
         <div>
@@ -757,6 +778,9 @@ Name: ${business.businessName}
 Industry: ${business.industry}
 Description: ${business.description}
 Location: ${business.location}
+Website: ${business.websiteUrl || "Not provided"}
+Google My Business: ${business.gmbUrl || "Not provided"}
+Social Media: ${business.socialUrl || "Not provided"}
 Additional Notes: ${business.additionalNotes || "None"}
 Pricing Tier: ${business.pricingTier ? business.pricingTier.label + " (" + business.pricingTier.tag + ")" : "Mid-Range"}
 Price Range: ${business.pricingTier ? business.pricingTier.label + " (" + business.pricingTier.tag + ") — " + business.pricingTier.description : "Mid-range pricing"}
@@ -1014,6 +1038,9 @@ Business Name: ${business.businessName}
 Business Industry: ${business.industry}
 Business Description: ${business.description}
 Location: ${business.location}
+Website: ${business.websiteUrl || "Not provided"}
+Google My Business: ${business.gmbUrl || "Not provided"}
+Social Media: ${business.socialUrl || "Not provided"}
 Additional Notes: ${business.additionalNotes || "None"}
 
 Persona 1: ${personas[0] ? personas[0].name : ""} (${personas[0] ? personas[0].archetype : ""}) - Goal: ${personas[0] ? personas[0].primaryGoal : ""}
@@ -1692,6 +1719,9 @@ function StepResults({ business, personas, answers, leadId, onRestart }) {
 Business Name: ${business.businessName}
 Industry: ${business.industry}
 Location: ${business.location}
+Website: ${business.websiteUrl || "Not provided"}
+Google My Business: ${business.gmbUrl || "Not provided"}
+Social Media: ${business.socialUrl || "Not provided"}
 Additional Notes: ${business.additionalNotes || "None"}
 
 Overall Business Journey Score: ${totalPct}%
@@ -1854,11 +1884,16 @@ The single most important fix: focus all energy on the ${weakest.label} stage fi
 
             <!-- Business Info -->
             <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:20px;margin-bottom:24px;">
-              <div style="font-size:12px;color:#FF6B35;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Business Details</div>
+              <div style="font-size:12px;color:#FF6B35;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Business Details & Links</div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                 <div style="grid-column:1/-1;"><div style="font-size:11px;color:#555;margin-bottom:4px;">BUSINESS NAME</div><div style="color:#f5f5f5;font-size:14px;">${business.businessName || "Not provided"}</div></div>
                 <div><div style="font-size:11px;color:#555;margin-bottom:4px;">INDUSTRY</div><div style="color:#f5f5f5;font-size:14px;">${business.industry}</div></div>
                 <div><div style="font-size:11px;color:#555;margin-bottom:4px;">LOCATION</div><div style="color:#f5f5f5;font-size:14px;">${business.location}</div></div>
+                
+                ${business.websiteUrl ? `<div><div style="font-size:11px;color:#555;margin-bottom:4px;">WEBSITE</div><div style="font-size:14px;"><a href="${business.websiteUrl}" target="_blank" style="color:#FF6B35;text-decoration:none;">${business.websiteUrl}</a></div></div>` : ""}
+                ${business.gmbUrl ? `<div><div style="font-size:11px;color:#555;margin-bottom:4px;">GOOGLE GMB</div><div style="font-size:14px;"><a href="${business.gmbUrl}" target="_blank" style="color:#FF6B35;text-decoration:none;">View Maps</a></div></div>` : ""}
+                ${business.socialUrl ? `<div><div style="font-size:11px;color:#555;margin-bottom:4px;">SOCIAL MEDIA</div><div style="font-size:14px;"><a href="${business.socialUrl}" target="_blank" style="color:#FF6B35;text-decoration:none;">View Profile</a></div></div>` : ""}
+
                 ${business.additionalNotes ? `<div style="grid-column:1/-1;"><div style="font-size:11px;color:#555;margin-bottom:4px;">ADDITIONAL NOTES</div><div style="color:#f5f5f5;font-size:14px;line-height:1.5;">${business.additionalNotes}</div></div>` : ""}
                 <div style="grid-column:1/-1;"><div style="font-size:11px;color:#555;margin-bottom:4px;">CUSTOMER PERSONAS AUDITED</div><div style="color:#f5f5f5;font-size:14px;">${personas.map((p) => p.name).join(", ")}</div></div>
               </div>
@@ -4393,6 +4428,9 @@ export default function App() {
                 additionalNotes: d.additionalNotes,
                 industry: d.industry,
                 location: d.location,
+                websiteUrl: d.websiteUrl || "",
+                gmbUrl: d.gmbUrl || "",
+                socialUrl: d.socialUrl || "",
                 pricingTier: d.pricingTier?.label || "Unknown",
                 completedAt: new Date().toISOString(),
                 source: "PeoplePlex App",
