@@ -4558,220 +4558,293 @@ export default function App() {
       </div>
     );
   if (!user) return <AuthScreen />;
-  if (showSettings)
-    return (
-      <UserProfileSettings user={user} onClose={() => setShowSettings(false)} />
-    );
-  if (showDashboard)
-    return (
-      <UserDashboard
-        onClose={() => setShowDashboard(false)}
-        onLoadAudit={(lead, targetStep) => {
-          setBusiness(lead.business);
-          setPersonas(lead.personas);
-          setAnswers(lead.answers);
-          setLeadId(lead.id);
-          setStep(targetStep);
-          setShowDashboard(false);
-        }}
-      />
-    );
+
+  const isAudit = !showSettings && !showDashboard;
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: DARK,
-        fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
-        color: WHITE,
-        padding: "0 0 60px",
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          padding: "20px 24px",
-          borderBottom: `1px solid ${BORDER}`,
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          marginBottom: 8,
-        }}
-      >
+    <div className="layout-container">
+      <style>{`
+        .layout-container {
+          display: flex;
+          flex-direction: row;
+          min-height: 100vh;
+          background: ${DARK};
+          font-family: 'DM Sans', 'Segoe UI', sans-serif;
+          color: ${WHITE};
+        }
+        .side-nav {
+          width: 260px;
+          border-right: 1px solid ${BORDER};
+          display: flex;
+          flex-direction: column;
+          padding: 24px 16px;
+          gap: 16px;
+          background: #000;
+          position: sticky;
+          top: 0;
+          height: 100vh;
+          z-index: 50;
+        }
+        .main-content {
+          flex: 1;
+          height: 100vh;
+          overflow-y: auto;
+          position: relative;
+        }
+        .nav-btn {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 16px;
+          border-radius: 12px;
+          border: none;
+          cursor: pointer;
+          font-weight: 700;
+          font-size: 15px;
+          text-align: left;
+          transition: all .2s;
+        }
+        .nav-btn.active {
+          background: ${CARD};
+          color: ${ORANGE};
+        }
+        .nav-btn.inactive {
+          background: transparent;
+          color: ${MUTED};
+        }
+        .nav-btn.inactive:hover {
+          background: #ffffff0a;
+          color: ${WHITE};
+        }
+        .nav-btn-icon {
+          font-size: 20px;
+        }
+        @media (max-width: 768px) {
+          .layout-container {
+            flex-direction: column;
+          }
+          .side-nav {
+            width: 100%;
+            height: 70px;
+            flex-direction: row;
+            border-right: none;
+            border-top: 1px solid ${BORDER};
+            bottom: 0;
+            top: auto;
+            position: fixed;
+            justify-content: space-around;
+            padding: 0 10px;
+            align-items: center;
+            gap: 0;
+          }
+          .logo-section, .spacer {
+            display: none !important;
+          }
+          .nav-btn {
+            flex-direction: column;
+            gap: 4px;
+            padding: 10px;
+            font-size: 10px;
+            border-radius: 8px;
+            justify-content: center;
+          }
+          .main-content {
+            padding-bottom: 70px;
+          }
+        }
+      `}</style>
+
+      {/* Side / Bottom Navigation */}
+      <div className="side-nav">
         <div
-          onClick={() => {
-            setShowDashboard(false);
-            setShowSettings(false);
-            restart();
-          }}
+          className="logo-section"
           style={{
-            cursor: "pointer",
+            padding: "0 8px 16px",
+            marginBottom: 16,
+            borderBottom: `1px solid ${BORDER}`,
             display: "flex",
             alignItems: "center",
-            gap: 10,
+            gap: 12,
           }}
         >
           <div
-            title="Home"
             style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
+              width: 36,
+              height: 36,
+              borderRadius: 10,
               background: ORANGE,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: 900,
               color: "#000",
-              transition: "background .2s",
             }}
           >
             H
           </div>
           <div>
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 700,
-                color: WHITE,
-                lineHeight: 1,
-              }}
-            >
+            <div style={{ fontSize: 16, fontWeight: 800, color: WHITE }}>
               PeoplePlex
             </div>
-            <div style={{ fontSize: 11, color: MUTED }}>
-              Understand Your Customers
-            </div>
+            <div style={{ fontSize: 11, color: MUTED }}>Growth Tools</div>
           </div>
         </div>
-        <div style={{ flex: 1 }} />
+
         <button
-          onClick={() => setShowSettings(true)}
-          style={{
-            padding: "6px 12px",
-            borderRadius: 6,
-            border: `1px solid ${BORDER}`,
-            background: "transparent",
-            color: WHITE,
-            fontSize: 12,
-            cursor: "pointer",
-            transition: "all .2s",
-            marginRight: 8,
+          className={`nav-btn ${isAudit ? "active" : "inactive"}`}
+          onClick={() => {
+            setShowDashboard(false);
+            setShowSettings(false);
+            if (isAudit && step === 0) restart();
           }}
         >
-          Settings
+          <span className="nav-btn-icon">📝</span>
+          <span>New Audit</span>
         </button>
+
         <button
-          onClick={handleLogoClick}
-          style={{
-            padding: "6px 12px",
-            borderRadius: 6,
-            border: `1px solid ${BORDER}`,
-            background: CARD,
-            color: WHITE,
-            fontSize: 12,
-            cursor: "pointer",
-            transition: "all .2s",
-            marginRight: 8,
+          className={`nav-btn ${showDashboard ? "active" : "inactive"}`}
+          onClick={() => {
+            setShowDashboard(true);
+            setShowSettings(false);
           }}
         >
-          Dashboard
+          <span className="nav-btn-icon">📊</span>
+          <span>My Audits</span>
         </button>
+
         <button
+          className={`nav-btn ${showSettings ? "active" : "inactive"}`}
+          onClick={() => {
+            setShowSettings(true);
+            setShowDashboard(false);
+          }}
+        >
+          <span className="nav-btn-icon">⚙️</span>
+          <span>Settings</span>
+        </button>
+
+        <div className="spacer" style={{ flex: 1 }} />
+
+        <button
+          className="nav-btn inactive"
           onClick={() => signOut(auth)}
-          style={{
-            padding: "6px 12px",
-            borderRadius: 6,
-            border: `1px solid ${BORDER}`,
-            background: "transparent",
-            color: MUTED,
-            fontSize: 12,
-            cursor: "pointer",
-            transition: "all .2s",
-          }}
+          style={{ color: "#ef4444" }}
         >
-          Sign Out
+          <span className="nav-btn-icon">🚪</span>
+          <span>Sign Out</span>
         </button>
       </div>
 
-      {/* Content */}
-      <div style={{ maxWidth: 560, margin: "0 auto", padding: "24px 20px 0" }}>
-        <Steps current={step} />
+      {/* Main Content Area */}
+      <div className="main-content">
+        {showSettings ? (
+          <UserProfileSettings
+            user={user}
+            onClose={() => setShowSettings(false)}
+          />
+        ) : showDashboard ? (
+          <UserDashboard
+            onClose={() => setShowDashboard(false)}
+            onLoadAudit={(lead, targetStep) => {
+              setBusiness(lead.business);
+              setPersonas(lead.personas);
+              setAnswers(lead.answers);
+              setLeadId(lead.id);
+              setStep(targetStep);
+              setShowDashboard(false);
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              maxWidth: 560,
+              margin: "0 auto",
+              padding: "40px 20px 60px",
+            }}
+          >
+            <Steps current={step} />
 
-        {step === 0 && (
-          <StepDescribe
-            onNext={(d) => {
-              setBusiness(d);
-              // ── Save initial audit session to Firestore ──
-              const newLeadId = `audit_${Date.now()}`;
-              setLeadId(newLeadId);
-              const auditData = {
-                id: newLeadId,
-                businessName: d.businessName,
-                additionalNotes: d.additionalNotes,
-                industry: d.industry,
-                location: d.location,
-                websiteUrl: d.websiteUrl || "",
-                gmbUrl: d.gmbUrl || "",
-                socialUrl: d.socialUrl || "",
-                pricingTier: d.pricingTier?.label || "Unknown",
-                completedAt: new Date().toISOString(),
-                source: "PeoplePlex App",
-              };
+            {step === 0 && (
+              <StepDescribe
+                onNext={(d) => {
+                  setBusiness(d);
+                  const newLeadId = `audit_${Date.now()}`;
+                  setLeadId(newLeadId);
+                  const auditData = {
+                    id: newLeadId,
+                    businessName: d.businessName,
+                    additionalNotes: d.additionalNotes,
+                    industry: d.industry,
+                    location: d.location,
+                    websiteUrl: d.websiteUrl || "",
+                    gmbUrl: d.gmbUrl || "",
+                    socialUrl: d.socialUrl || "",
+                    pricingTier: d.pricingTier?.label || "Unknown",
+                    completedAt: new Date().toISOString(),
+                    source: "PeoplePlex App",
+                  };
 
-              // Save to Firestore Database
-              if (auth.currentUser) {
-                setDoc(
-                  doc(db, "users", auth.currentUser.uid, "audits", newLeadId),
-                  auditData,
-                ).catch((err) => {
-                  console.error("Firestore save error (Step 1):", err);
-                });
-              }
+                  if (auth.currentUser) {
+                    setDoc(
+                      doc(
+                        db,
+                        "users",
+                        auth.currentUser.uid,
+                        "audits",
+                        newLeadId,
+                      ),
+                      auditData,
+                    ).catch((err) => {
+                      console.error("Firestore save error:", err);
+                    });
+                  }
 
-              setStep(1);
-            }}
-          />
-        )}
-        {step === 1 && (
-          <StepPersonas
-            business={business}
-            onNext={(p) => {
-              setPersonas(p);
-              setStep(2);
-            }}
-            onBack={() => setStep(0)}
-          />
-        )}
-        {step === 2 && (
-          <StepJourney
-            business={business}
-            personas={personas}
-            onNext={(updatedPersonas) => {
-              if (updatedPersonas) setPersonas(updatedPersonas);
-              setStep(3);
-            }}
-            onBack={() => setStep(1)}
-          />
-        )}
-        {step === 3 && (
-          <StepAudit
-            onNext={(a) => {
-              setAnswers(a);
-              setStep(4);
-            }}
-            onBack={() => setStep(2)}
-          />
-        )}
-        {step === 4 && (
-          <StepResults
-            business={business}
-            personas={personas}
-            answers={answers}
-            leadId={leadId}
-            onRestart={restart}
-          />
+                  setStep(1);
+                }}
+              />
+            )}
+            {step === 1 && (
+              <StepPersonas
+                business={business}
+                onNext={(p) => {
+                  setPersonas(p);
+                  setStep(2);
+                }}
+                onBack={() => setStep(0)}
+              />
+            )}
+            {step === 2 && (
+              <StepJourney
+                business={business}
+                personas={personas}
+                onNext={(updatedPersonas) => {
+                  if (updatedPersonas) setPersonas(updatedPersonas);
+                  setStep(3);
+                }}
+                onBack={() => setStep(1)}
+              />
+            )}
+            {step === 3 && (
+              <StepAudit
+                onNext={(a) => {
+                  setAnswers(a);
+                  setStep(4);
+                }}
+                onBack={() => setStep(2)}
+              />
+            )}
+            {step === 4 && (
+              <StepResults
+                business={business}
+                personas={personas}
+                answers={answers}
+                leadId={leadId}
+                onRestart={restart}
+              />
+            )}
+          </div>
         )}
       </div>
     </div>
