@@ -25,8 +25,8 @@ const ORANGE = "#FF6B35";
 const DARK = "#F9FAFB";
 const CARD = "#FFFFFF";
 const BORDER = "#E5E7EB";
-const MUTED = "#6B7280";
-const WHITE = "#111827";
+const MUTED = "#4B5563";
+const WHITE = "#000000";
 
 // ── Audit questions per journey stage ─────────────────────────
 const JOURNEY_STAGES = [
@@ -962,7 +962,7 @@ Return ONLY valid JSON, no markdown, no explanation:
             <p
               style={{
                 fontSize: 14,
-                color: "#aaa",
+                color: MUTED,
                 margin: "10px 0 12px",
                 lineHeight: 1.5,
               }}
@@ -983,7 +983,7 @@ Return ONLY valid JSON, no markdown, no explanation:
                 <div
                   key={item.label}
                   style={{
-                    background: "#0d0d0d",
+                    background: "#F3F4F6",
                     borderRadius: 8,
                     padding: "10px 12px",
                   }}
@@ -1198,7 +1198,7 @@ Return ONLY valid JSON, no markdown backticks, no explanation:
               borderRadius: 12,
               background: activePersonaIdx === i ? `${ORANGE}15` : CARD,
               border: `1px solid ${activePersonaIdx === i ? ORANGE : BORDER}`,
-              color: activePersonaIdx === i ? ORANGE : "#aaa",
+              color: activePersonaIdx === i ? ORANGE : MUTED,
               fontSize: 14,
               fontWeight: activePersonaIdx === i ? 700 : 500,
               cursor: "pointer",
@@ -1290,7 +1290,7 @@ Return ONLY valid JSON, no markdown backticks, no explanation:
               <div
                 key={item.label}
                 style={{
-                  background: "#0d0d0d",
+                  background: "#F3F4F6",
                   borderRadius: 10,
                   padding: "14px 16px",
                   display: "flex",

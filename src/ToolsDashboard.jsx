@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 
 const DARK = "#F9FAFB";
 const CARD = "#FFFFFF";
-const WHITE = "#111827";
-const MUTED = "#6B7280";
+const WHITE = "#000000";
+const MUTED = "#4B5563";
 const ORANGE = "#FF6B35";
 const BORDER = "#E5E7EB";
 
