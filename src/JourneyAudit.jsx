@@ -2461,7 +2461,7 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                     key={i}
                     style={{
                       fontSize: 14,
-                      color: "#ccc",
+                      color: MUTED,
                       lineHeight: 1.8,
                       margin: i > 0 ? "12px 0 0" : 0,
                     }}
@@ -2493,7 +2493,7 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                   <p
                     style={{
                       fontSize: 14,
-                      color: "#ccc",
+                      color: MUTED,
                       lineHeight: 1.8,
                       margin: 0,
                     }}
@@ -2522,7 +2522,7 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                   <p
                     style={{
                       fontSize: 14,
-                      color: "#ccc",
+                      color: MUTED,
                       lineHeight: 1.8,
                       margin: 0,
                     }}
@@ -2551,7 +2551,7 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                   <p
                     style={{
                       fontSize: 14,
-                      color: "#ccc",
+                      color: MUTED,
                       lineHeight: 1.8,
                       margin: 0,
                     }}
@@ -2626,14 +2626,14 @@ Write a personalised insight report based on their weakest stage and the URLs pr
               style={{
                 marginTop: 12,
                 padding: "10px 14px",
-                background: "#0d0d0d",
+                background: "#F3F4F6",
                 borderRadius: 8,
                 fontSize: 12,
                 color: MUTED,
                 lineHeight: 1.5,
               }}
             >
-              💡 <strong style={{ color: "#aaa" }}>Share Report URL</strong>{" "}
+              💡 <strong style={{ color: WHITE }}>Share Report URL</strong>{" "}
               generates a unique, public link you can instantly send to your
               team or stakeholders so they can view the full breakdown.
             </div>
@@ -3716,7 +3716,7 @@ function UserDashboard({ onClose, onLoadAudit }) {
               justifyContent: "center",
               fontSize: 16,
               fontWeight: 900,
-              color: "#000",
+              color: "#FFFFFF",
             }}
           >
             H
@@ -4014,7 +4014,7 @@ function UserDashboard({ onClose, onLoadAudit }) {
                     style={{
                       borderTop: `1px solid ${BORDER}`,
                       padding: "16px 20px",
-                      background: "#0d0d0d",
+                      background: "#F3F4F6",
                     }}
                   >
                     <div
@@ -4166,7 +4166,7 @@ function UserDashboard({ onClose, onLoadAudit }) {
                           borderRadius: 10,
                           border: "none",
                           background: ORANGE,
-                          color: "#000",
+                          color: "#FFFFFF",
                           fontWeight: 800,
                           fontSize: 13,
                           cursor: "pointer",
