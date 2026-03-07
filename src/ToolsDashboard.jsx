@@ -8,11 +8,36 @@ const MUTED = "#A1A1AA";
 const ORANGE = "#FF6B35";
 const BORDER = "#2A2A2A";
 
-export default function ToolsDashboard() {
+export default function ToolsDashboard({ business, setupWizard, onRestart }) {
     const navigate = useNavigate();
 
+    // If setup is not complete, show ONLY the Setup Wizard
+    if (!business) {
+        return (
+            <div style={{ padding: "40px 20px 60px", maxWidth: 600, margin: "0 auto" }}>
+                <h1 style={{ fontSize: 32, fontWeight: 900, marginBottom: 8, color: WHITE, textAlign: "center" }}>Project Setup Wizard</h1>
+                <p style={{ color: MUTED, marginBottom: 32, fontSize: 16, textAlign: "center" }}>Tell us about your client or business to initialize the AI Toolset.</p>
+                {setupWizard}
+            </div>
+        );
+    }
+
+    // Setup is complete, show the Tools Dashboard catalog
     return (
         <div style={{ padding: "40px 20px 60px", maxWidth: 900, margin: "0 auto" }}>
+            <div style={{ padding: "16px 24px", background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
+                <div>
+                    <h2 style={{ fontSize: 16, fontWeight: 800, color: WHITE }}>Active Project: {business.businessName}</h2>
+                    <p style={{ fontSize: 13, color: MUTED }}>{business.industry}</p>
+                </div>
+                <button
+                    onClick={onRestart}
+                    style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${BORDER}`, background: "transparent", color: MUTED, cursor: "pointer", fontSize: 13, fontWeight: 700 }}
+                >
+                    Reset Project
+                </button>
+            </div>
+
             <h1 style={{ fontSize: 28, fontWeight: 900, color: WHITE, marginBottom: 8 }}>Tools Dashboard</h1>
             <p style={{ color: MUTED, marginBottom: 40, fontSize: 15 }}>Select a PeoplePlex growth tool to start analyzing your business.</p>
 

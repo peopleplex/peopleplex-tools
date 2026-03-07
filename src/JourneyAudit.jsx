@@ -4738,7 +4738,6 @@ export default function App() {
           className={`nav-btn ${isAudit ? "active" : "inactive"}`}
           onClick={() => {
             navigate("/journey");
-            if (step === 0) restart();
           }}
         >
           <span className="nav-btn-icon">📝</span>
@@ -4784,8 +4783,45 @@ export default function App() {
       {/* Main Content Area */}
       <div className="main-content">
         <Routes>
-          <Route path="/" element={<ToolsDashboard />} />
-          <Route path="/psychology" element={<CustomerPsychology />} />
+          <Route path="/" element={
+            <ToolsDashboard
+              business={business}
+              onRestart={restart}
+              setupWizard={
+                <StepDescribe
+                  onNext={(d) => {
+                    setBusiness(d);
+                    const newLeadId = `audit_${Date.now()}`;
+                    setLeadId(newLeadId);
+                    const auditData = {
+                      id: newLeadId,
+                      businessName: d.businessName,
+                      additionalNotes: d.additionalNotes,
+                      industry: d.industry,
+                      location: d.location,
+                      websiteUrl: d.websiteUrl || "",
+                      gmbUrl: d.gmbUrl || "",
+                      socialUrl: d.socialUrl || "",
+                      pricingTier: d.pricingTier?.label || "Unknown",
+                      completedAt: new Date().toISOString(),
+                      source: "PeoplePlex App",
+                    };
+
+                    if (auth.currentUser) {
+                      setDoc(
+                        doc(db, "users", auth.currentUser.uid, "audits", newLeadId),
+                        auditData
+                      ).catch((err) => {
+                        console.error("Firestore save error:", err);
+                      });
+                    }
+                    setStep(1); // Set step to 1 so the Journey tool starts on Personas
+                  }}
+                />
+              }
+            />
+          } />
+          <Route path="/psychology" element={<CustomerPsychology business={business} personas={personas} />} />
 
           <Route path="/settings" element={
             <UserProfileSettings
@@ -4816,90 +4852,63 @@ export default function App() {
                 padding: "40px 20px 60px",
               }}
             >
-              {step > 0 && <Steps current={step - 1} />}
-
-              {step === 0 && (
-                <div>
-                  <h1 style={{ fontSize: 32, fontWeight: 900, marginBottom: 8, color: WHITE, textAlign: "center" }}>Project Setup Wizard</h1>
-                  <p style={{ color: MUTED, marginBottom: 32, fontSize: 16, textAlign: "center" }}>Tell us about your client or business to initialize the AI Toolset.</p>
-                  <StepDescribe
-                    onNext={(d) => {
-                      setBusiness(d);
-                      const newLeadId = `audit_${Date.now()}`;
-                      setLeadId(newLeadId);
-                      const auditData = {
-                        id: newLeadId,
-                        businessName: d.businessName,
-                        additionalNotes: d.additionalNotes,
-                        industry: d.industry,
-                        location: d.location,
-                        websiteUrl: d.websiteUrl || "",
-                        gmbUrl: d.gmbUrl || "",
-                        socialUrl: d.socialUrl || "",
-                        pricingTier: d.pricingTier?.label || "Unknown",
-                        completedAt: new Date().toISOString(),
-                        source: "PeoplePlex App",
-                      };
-
-                      if (auth.currentUser) {
-                        setDoc(
-                          doc(
-                            db,
-                            "users",
-                            auth.currentUser.uid,
-                            "audits",
-                            newLeadId,
-                          ),
-                          auditData,
-                        ).catch((err) => {
-                          console.error("Firestore save error:", err);
-                        });
-                      }
-
-                      setStep(1);
-                    }}
-                  />
+              {!business ? (
+                <div style={{ textAlign: "center", paddingTop: 80 }}>
+                  <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+                  <h2 style={{ fontSize: 24, fontWeight: 800, color: WHITE, marginBottom: 16 }}>Project Not Setup</h2>
+                  <p style={{ color: MUTED, marginBottom: 32, fontSize: 16 }}>Please complete the Project Setup Wizard on the Dashboard to access this tool.</p>
+                  <button
+                    onClick={() => navigate("/")}
+                    style={{ padding: "12px 24px", borderRadius: 12, border: "none", background: ORANGE, color: "#000", fontWeight: 800, cursor: "pointer" }}
+                  >
+                    Go to Dashboard →
+                  </button>
                 </div>
-              )}
-              {step === 1 && (
-                <StepPersonas
-                  business={business}
-                  onNext={(p) => {
-                    setPersonas(p);
-                    setStep(2);
-                  }}
-                  onBack={() => setStep(0)}
-                />
-              )}
-              {step === 2 && (
-                <StepJourney
-                  business={business}
-                  personas={personas}
-                  onNext={(updatedPersonas) => {
-                    if (updatedPersonas) setPersonas(updatedPersonas);
-                    setStep(3);
-                  }}
-                  onBack={() => setStep(1)}
-                />
-              )}
-              {step === 3 && (
-                <StepAudit
-                  onNext={(a) => {
-                    setAnswers(a);
-                    setStep(4);
-                  }}
-                  onBack={() => setStep(2)}
-                />
-              )}
-              {step === 4 && (
-                <StepResults
-                  business={business}
-                  personas={personas}
-                  answers={answers}
-                  leadId={leadId}
-                  onRestart={restart}
-                  onNavigatePsychology={() => navigate("/psychology")}
-                />
+              ) : (
+                <>
+                  {step > 0 && <Steps current={step - 1} />}
+
+                  {step === 1 && (
+                    <StepPersonas
+                      business={business}
+                      onNext={(p) => {
+                        setPersonas(p);
+                        setStep(2);
+                      }}
+                      onBack={() => navigate("/")}
+                    />
+                  )}
+                  {step === 2 && (
+                    <StepJourney
+                      business={business}
+                      personas={personas}
+                      onNext={(updatedPersonas) => {
+                        if (updatedPersonas) setPersonas(updatedPersonas);
+                        setStep(3);
+                      }}
+                      onBack={() => setStep(1)}
+                    />
+                  )}
+                  {step === 3 && (
+                    <StepAudit
+                      onNext={(a) => {
+                        setAnswers(a);
+                        setStep(4);
+                      }}
+                      onBack={() => setStep(2)}
+                    />
+                  )}
+                  {step === 4 && (
+                    <StepResults
+                      business={business}
+                      personas={personas}
+                      answers={answers}
+                      leadId={leadId}
+                      onRestart={restart}
+                      onNavigatePsychology={() => navigate("/psychology")}
+                    />
+                  )}
+                </>
               )}
             </div>
           } />
