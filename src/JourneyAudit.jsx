@@ -457,6 +457,8 @@ const TIER_INSIGHTS = {
 // STEP 1 — Business Description + Pricing Tier
 // ══════════════════════════════════════════════════════════════
 function StepDescribe({ onNext }) {
+  const [setupStep, setSetupStep] = useState(1);
+
   const [businessName, setBusinessName] = useState("");
   const [industry, setIndustry] = useState("");
   const [description, setDesc] = useState("");
@@ -467,288 +469,337 @@ function StepDescribe({ onNext }) {
   const [pricingTier, setPricing] = useState(null);
   const [additionalNotes, setAdditionalNotes] = useState("");
 
-  const ready =
+  const step1Ready =
     businessName.trim() &&
     industry.trim() &&
     description.trim() &&
-    location.trim() &&
-    pricingTier;
+    location.trim();
+  const step3Ready = pricingTier !== null;
 
   return (
     <div>
       <div style={{ marginBottom: 32 }}>
-        <div
-          style={{
-            fontSize: 13,
-            color: ORANGE,
-            letterSpacing: ".1em",
-            textTransform: "uppercase",
-            marginBottom: 8,
-          }}
-        >
-          PeoplePlex
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
+          {[1, 2, 3].map((s) => (
+            <div key={s} style={{ flex: 1, height: 6, borderRadius: 3, background: setupStep >= s ? ORANGE : BORDER, transition: "background .3s" }} />
+          ))}
         </div>
-        <h1
-          style={{
-            fontSize: 32,
-            fontWeight: 800,
-            color: WHITE,
-            margin: 0,
-            lineHeight: 1.2,
-          }}
-        >
-          Discover Your
-          <br />
-          Customers
-        </h1>
-        <p
-          style={{ color: MUTED, marginTop: 12, fontSize: 15, lineHeight: 1.6 }}
-        >
-          Tell us about yourself and your business. AI will generate customer
-          personas and map their complete journey with you.
-        </p>
+
+        {setupStep === 1 && (
+          <>
+            <h2 style={{ fontSize: 24, fontWeight: 800, color: WHITE, margin: "0 0 8px 0" }}>Step 1: Core Identity</h2>
+            <p style={{ color: MUTED, margin: 0, fontSize: 14 }}>Establish the foundational identity of the business.</p>
+          </>
+        )}
+        {setupStep === 2 && (
+          <>
+            <h2 style={{ fontSize: 24, fontWeight: 800, color: WHITE, margin: "0 0 8px 0" }}>Step 2: Digital Footprint</h2>
+            <p style={{ color: MUTED, margin: 0, fontSize: 14 }}>Link their core channels so the AI can analyze their current presence.</p>
+          </>
+        )}
+        {setupStep === 3 && (
+          <>
+            <h2 style={{ fontSize: 24, fontWeight: 800, color: WHITE, margin: "0 0 8px 0" }}>Step 3: Market Positioning</h2>
+            <p style={{ color: MUTED, margin: 0, fontSize: 14 }}>Determine where their offer sits in the wider market ecosystem.</p>
+          </>
+        )}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-        <Input
-          label="Business Name"
-          placeholder="e.g., PeoplePlex Training Institute"
-          value={businessName}
-          onChange={setBusinessName}
-        />
-        <Input
-          label="Industry"
-          placeholder="e.g., Training Institute, Real Estate, Salon"
-          value={industry}
-          onChange={setIndustry}
-        />
-        <Input
-          label="Business Description"
-          placeholder="e.g., We run an IT training institute in Chennai offering placement-focused courses for graduates and working professionals."
-          value={description}
-          onChange={setDesc}
-          textarea
-        />
-        <Input
-          label="Location"
-          placeholder="e.g., Chennai, India or Online-only"
-          value={location}
-          onChange={setLocation}
-        />
-        <Input
-          label="Website URL (Optional)"
-          placeholder="https://example.com"
-          value={websiteUrl}
-          onChange={setWebsiteUrl}
-        />
-        <Input
-          label="Google My Business (GMB) URL (Optional)"
-          placeholder="https://maps.app.goo.gl/..."
-          value={gmbUrl}
-          onChange={setGmbUrl}
-        />
-        <Input
-          label="Social Media URL (Optional)"
-          placeholder="https://instagram.com/yourbrand"
-          value={socialUrl}
-          onChange={setSocialUrl}
-        />
+      {setupStep === 1 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <Input
+            label="Business Name"
+            placeholder="e.g., PeoplePlex Training Institute"
+            value={businessName}
+            onChange={setBusinessName}
+          />
+          <Input
+            label="Industry"
+            placeholder="e.g., Training Institute, Real Estate, Salon"
+            value={industry}
+            onChange={setIndustry}
+          />
+          <Input
+            label="Business Description"
+            placeholder="e.g., We run an IT training institute in Chennai offering placement-focused courses for graduates and working professionals."
+            value={description}
+            onChange={setDesc}
+            textarea
+          />
+          <Input
+            label="Location"
+            placeholder="e.g., Chennai, India or Online-only"
+            value={location}
+            onChange={setLocation}
+          />
 
-        <div>
-          <div
-            style={{
-              fontSize: 13,
-              color: MUTED,
-              letterSpacing: ".05em",
-              textTransform: "uppercase",
-              marginBottom: 6,
-            }}
-          >
-            Pricing Tier
+          <div style={{ marginTop: 8 }}>
+            <OrangeBtn fullWidth disabled={!step1Ready} onClick={() => setSetupStep(2)}>
+              Next: Digital Footprint →
+            </OrangeBtn>
           </div>
-          <p
-            style={{
-              fontSize: 13,
-              color: MUTED,
-              marginBottom: 14,
-              lineHeight: 1.5,
-            }}
-          >
-            Where does your product or service sit in the market? This shapes
-            who your customer is and what drives their decision.
-          </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {PRICING_TIERS.map((tier) => {
-              const sel = pricingTier && pricingTier.id === tier.id;
-              return (
-                <div
-                  key={tier.id}
-                  onClick={() => setPricing(tier)}
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: 14,
-                    padding: "16px 18px",
-                    borderRadius: 12,
-                    border: "1.5px solid " + (sel ? tier.color : BORDER),
-                    background: sel ? tier.color + "12" : CARD,
-                    cursor: "pointer",
-                    transition: "all .2s",
-                  }}
-                >
+        </div>
+      )}
+
+      {setupStep === 2 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <Input
+            label="Website URL (Optional)"
+            placeholder="https://example.com"
+            value={websiteUrl}
+            onChange={setWebsiteUrl}
+          />
+          <Input
+            label="Google My Business (GMB) URL (Optional)"
+            placeholder="https://maps.app.goo.gl/..."
+            value={gmbUrl}
+            onChange={setGmbUrl}
+          />
+          <Input
+            label="Social Media URL (Optional)"
+            placeholder="https://instagram.com/yourbrand"
+            value={socialUrl}
+            onChange={setSocialUrl}
+          />
+
+          <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+            <button
+              onClick={() => setSetupStep(1)}
+              style={{
+                padding: "14px 24px",
+                borderRadius: 12,
+                background: "transparent",
+                border: `1.5px solid ${BORDER}`,
+                color: WHITE,
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "all .2s"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = MUTED;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = BORDER;
+              }}
+            >
+              ← Back
+            </button>
+            <div style={{ flex: 1 }}>
+              <OrangeBtn fullWidth onClick={() => setSetupStep(3)}>
+                Next: Market Positioning →
+              </OrangeBtn>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {setupStep === 3 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <div>
+            <div
+              style={{
+                fontSize: 13,
+                color: MUTED,
+                letterSpacing: ".05em",
+                textTransform: "uppercase",
+                marginBottom: 6,
+              }}
+            >
+              Pricing Tier
+            </div>
+            <p
+              style={{
+                fontSize: 13,
+                color: MUTED,
+                marginBottom: 14,
+                lineHeight: 1.5,
+              }}
+            >
+              Where does your product or service sit in the market? This shapes
+              who your customer is and what drives their decision.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {PRICING_TIERS.map((tier) => {
+                const sel = pricingTier && pricingTier.id === tier.id;
+                return (
                   <div
+                    key={tier.id}
+                    onClick={() => setPricing(tier)}
                     style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: "50%",
-                      flexShrink: 0,
-                      marginTop: 2,
-                      border: "2px solid " + (sel ? tier.color : BORDER),
-                      background: sel ? tier.color : "transparent",
                       display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
+                      alignItems: "flex-start",
+                      gap: 14,
+                      padding: "16px 18px",
+                      borderRadius: 12,
+                      border: "1.5px solid " + (sel ? tier.color : BORDER),
+                      background: sel ? tier.color + "12" : CARD,
+                      cursor: "pointer",
                       transition: "all .2s",
                     }}
                   >
-                    {sel && (
-                      <div
-                        style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: "50%",
-                          background: "#000",
-                        }}
-                      />
-                    )}
-                  </div>
-                  <div style={{ flex: 1 }}>
                     <div
                       style={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: "50%",
+                        flexShrink: 0,
+                        marginTop: 2,
+                        border: "2px solid " + (sel ? tier.color : BORDER),
+                        background: sel ? tier.color : "transparent",
                         display: "flex",
                         alignItems: "center",
-                        gap: 8,
-                        marginBottom: 3,
-                        flexWrap: "wrap",
+                        justifyContent: "center",
+                        transition: "all .2s",
                       }}
                     >
-                      <span
+                      {sel && (
+                        <div
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: "50%",
+                            background: "#000",
+                          }}
+                        />
+                      )}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div
                         style={{
-                          fontSize: 15,
-                          fontWeight: 700,
-                          color: sel ? WHITE : "#aaa",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          marginBottom: 3,
+                          flexWrap: "wrap",
                         }}
                       >
-                        {tier.label}
-                      </span>
-                      <span
+                        <span
+                          style={{
+                            fontSize: 15,
+                            fontWeight: 700,
+                            color: sel ? WHITE : "#aaa",
+                          }}
+                        >
+                          {tier.label}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            padding: "2px 8px",
+                            borderRadius: 999,
+                            background: tier.color + "22",
+                            color: tier.color,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {tier.tag}
+                        </span>
+                      </div>
+                      <div
+                        style={{ fontSize: 13, color: MUTED, lineHeight: 1.4 }}
+                      >
+                        {tier.description}
+                      </div>
+                      <div
                         style={{
-                          fontSize: 11,
-                          padding: "2px 8px",
-                          borderRadius: 999,
-                          background: tier.color + "22",
-                          color: tier.color,
-                          fontWeight: 600,
+                          fontSize: 12,
+                          color: sel ? tier.color : "#444",
+                          marginTop: 4,
+                          fontWeight: 500,
                         }}
                       >
-                        {tier.tag}
-                      </span>
-                    </div>
-                    <div
-                      style={{ fontSize: 13, color: MUTED, lineHeight: 1.4 }}
-                    >
-                      {tier.description}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: sel ? tier.color : "#444",
-                        marginTop: 4,
-                        fontWeight: 500,
-                      }}
-                    >
-                      {
-                        (INDUSTRY_EXAMPLES[getIndustryKey(industry)] ||
-                          INDUSTRY_EXAMPLES["default"])[tier.id]
-                      }
+                        {
+                          (INDUSTRY_EXAMPLES[getIndustryKey(industry)] ||
+                            INDUSTRY_EXAMPLES["default"])[tier.id]
+                        }
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
 
-          {pricingTier && (
-            <div
-              style={{
-                marginTop: 14,
-                padding: "14px 16px",
-                background: pricingTier.color + "10",
-                border: "1px solid " + pricingTier.color + "30",
-                borderRadius: 10,
-              }}
-            >
+            {pricingTier && (
               <div
                 style={{
-                  fontSize: 12,
-                  color: pricingTier.color,
-                  fontWeight: 700,
-                  marginBottom: 4,
+                  marginTop: 14,
+                  padding: "14px 16px",
+                  background: pricingTier.color + "10",
+                  border: "1px solid " + pricingTier.color + "30",
+                  borderRadius: 10,
                 }}
               >
-                {pricingTier.icon} {pricingTier.tag} Customer Insight
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: pricingTier.color,
+                    fontWeight: 700,
+                    marginBottom: 4,
+                  }}
+                >
+                  {pricingTier.icon} {pricingTier.tag} Customer Insight
+                </div>
+                <div style={{ fontSize: 13, color: MUTED, lineHeight: 1.5 }}>
+                  {TIER_INSIGHTS[pricingTier.id]}
+                </div>
               </div>
-              <div style={{ fontSize: 13, color: MUTED, lineHeight: 1.5 }}>
-                {TIER_INSIGHTS[pricingTier.id]}
-              </div>
+            )}
+          </div>
+
+          <Input
+            label="Additional Notes (Optional)"
+            placeholder="e.g., We have a small budget, our primary audience is college students..."
+            value={additionalNotes}
+            onChange={setAdditionalNotes}
+            textarea
+          />
+
+          <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+            <button
+              onClick={() => setSetupStep(2)}
+              style={{
+                padding: "14px 24px",
+                borderRadius: 12,
+                background: "transparent",
+                border: `1.5px solid ${BORDER}`,
+                color: WHITE,
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "all .2s"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = MUTED;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = BORDER;
+              }}
+            >
+              ← Back
+            </button>
+            <div style={{ flex: 1 }}>
+              <OrangeBtn
+                fullWidth
+                disabled={!step3Ready}
+                onClick={() =>
+                  onNext({
+                    businessName,
+                    industry,
+                    description,
+                    location,
+                    websiteUrl,
+                    gmbUrl,
+                    socialUrl,
+                    pricingTier,
+                    additionalNotes,
+                  })
+                }
+              >
+                Complete Setup 🚀
+              </OrangeBtn>
             </div>
-          )}
+          </div>
         </div>
-      </div>
-
-      <div style={{ marginTop: 24 }}>
-        <Input
-          label="Additional Notes (Optional)"
-          placeholder="e.g., We have a small budget, our primary audience is college students..."
-          value={additionalNotes}
-          onChange={setAdditionalNotes}
-          textarea
-        />
-      </div>
-
-      <div style={{ marginTop: 24 }}>
-        <OrangeBtn
-          fullWidth
-          disabled={!ready}
-          onClick={() =>
-            onNext({
-              businessName,
-              industry,
-              description,
-              location,
-              websiteUrl,
-              gmbUrl,
-              socialUrl,
-              pricingTier,
-              additionalNotes,
-            })
-          }
-        >
-          Generate Customer Personas →
-        </OrangeBtn>
-        {!ready && (industry || description || location) && (
-          <p
-            style={{
-              fontSize: 12,
-              color: MUTED,
-              textAlign: "center",
-              marginTop: 10,
-            }}
-          >
-            Complete all fields above to continue
-          </p>
-        )}
-      </div>
+      )}
     </div>
   );
 }
