@@ -22,11 +22,11 @@ const BOOKING_LINK = "https://iamhariharan.com/training-institutes";
 
 // ── Brand tokens ──────────────────────────────────────────────
 const ORANGE = "#FF6B35";
-const DARK = "#0A0A0A";
-const CARD = "#111111";
-const BORDER = "#1E1E1E";
-const MUTED = "#555555";
-const WHITE = "#F5F5F5";
+const DARK = "#F9FAFB";
+const CARD = "#FFFFFF";
+const BORDER = "#E5E7EB";
+const MUTED = "#6B7280";
+const WHITE = "#111827";
 
 // ── Audit questions per journey stage ─────────────────────────
 const JOURNEY_STAGES = [
@@ -193,8 +193,8 @@ const OrangeBtn = ({ children, onClick, disabled, fullWidth, secondary }) => (
       padding: "15px 28px",
       borderRadius: 12,
       border: secondary ? `1px solid ${BORDER}` : "none",
-      background: secondary ? "transparent" : disabled ? "#333" : ORANGE,
-      color: disabled ? MUTED : secondary ? MUTED : "#000",
+      background: secondary ? "transparent" : disabled ? BORDER : ORANGE,
+      color: disabled ? MUTED : secondary ? MUTED : "#FFFFFF",
       fontSize: 15,
       fontWeight: 700,
       cursor: disabled ? "not-allowed" : "pointer",
@@ -241,7 +241,7 @@ const Steps = ({ current }) => {
                 height: 32,
                 borderRadius: "50%",
                 background:
-                  i < current ? ORANGE : i === current ? ORANGE : BORDER,
+                  i < current ? ORANGE : i === current ? ORANGE : CARD,
                 border: `2px solid ${i <= current ? ORANGE : BORDER}`,
                 display: "flex",
                 alignItems: "center",
@@ -4661,7 +4661,7 @@ export default function App() {
           flex-direction: column;
           padding: 24px 16px;
           gap: 16px;
-          background: #000;
+          background: ${CARD};
           position: sticky;
           top: 0;
           height: 100vh;
@@ -4695,7 +4695,7 @@ export default function App() {
           color: ${MUTED};
         }
         .nav-btn.inactive:hover {
-          background: #ffffff0a;
+          background: rgba(0,0,0,0.04);
           color: ${WHITE};
         }
         .nav-btn-icon {
@@ -4910,7 +4910,7 @@ export default function App() {
                   <p style={{ color: MUTED, marginBottom: 32, fontSize: 16 }}>Please complete the Project Setup Wizard on the Dashboard to access this tool.</p>
                   <button
                     onClick={() => navigate("/")}
-                    style={{ padding: "12px 24px", borderRadius: 12, border: "none", background: ORANGE, color: "#000", fontWeight: 800, cursor: "pointer" }}
+                    style={{ padding: "12px 24px", borderRadius: 12, border: "none", background: ORANGE, color: "#FFFFFF", fontWeight: 800, cursor: "pointer" }}
                   >
                     Go to Dashboard →
                   </button>

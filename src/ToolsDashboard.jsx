@@ -1,12 +1,15 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
-const DARK = "#131313";
-const CARD = "#1C1C1C";
-const WHITE = "#FFFFFF";
-const MUTED = "#A1A1AA";
+const DARK = "#F9FAFB";
+const CARD = "#FFFFFF";
+const WHITE = "#111827";
+const MUTED = "#6B7280";
 const ORANGE = "#FF6B35";
-const BORDER = "#2A2A2A";
+const BORDER = "#E5E7EB";
+
+const SHADOW = "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)";
+const HOVER_SHADOW = "0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04)";
 
 export default function ToolsDashboard({ business, setupWizard, onRestart }) {
     const navigate = useNavigate();
@@ -52,18 +55,21 @@ export default function ToolsDashboard({ business, setupWizard, onRestart }) {
                         borderRadius: 20,
                         padding: 24,
                         cursor: "pointer",
-                        transition: "all .2s",
+                        transition: "all .3s ease",
                         display: "flex",
                         flexDirection: "column",
-                        gap: 16
+                        gap: 16,
+                        boxShadow: SHADOW
                     }}
                     onMouseEnter={(e) => {
                         e.currentTarget.style.borderColor = ORANGE;
                         e.currentTarget.style.transform = "translateY(-4px)";
+                        e.currentTarget.style.boxShadow = HOVER_SHADOW;
                     }}
                     onMouseLeave={(e) => {
                         e.currentTarget.style.borderColor = BORDER;
                         e.currentTarget.style.transform = "none";
+                        e.currentTarget.style.boxShadow = SHADOW;
                     }}
                 >
                     <div style={{ background: `${ORANGE}20`, height: 60, width: 60, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>📝</div>
@@ -71,7 +77,7 @@ export default function ToolsDashboard({ business, setupWizard, onRestart }) {
                         <h2 style={{ fontSize: 20, fontWeight: 800, color: WHITE, marginBottom: 6 }}>1. Customer Journey Audit</h2>
                         <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.5 }}>Map out the 5 stages of your customer's journey and identify exact leaks where you are losing revenue.</p>
                     </div>
-                    <button style={{ marginTop: "auto", background: ORANGE, border: "none", color: "#000", fontWeight: 800, padding: "12px", borderRadius: 10, cursor: "pointer", fontSize: 15 }}>Open Tool →</button>
+                    <button style={{ marginTop: "auto", background: ORANGE, border: "none", color: "#FFFFFF", fontWeight: 800, padding: "12px", borderRadius: 10, cursor: "pointer", fontSize: 15 }}>Open Tool →</button>
                 </div>
 
                 {/* Psychology Tool */}
@@ -83,18 +89,21 @@ export default function ToolsDashboard({ business, setupWizard, onRestart }) {
                         borderRadius: 20,
                         padding: 24,
                         cursor: "pointer",
-                        transition: "all .2s",
+                        transition: "all .3s ease",
                         display: "flex",
                         flexDirection: "column",
-                        gap: 16
+                        gap: 16,
+                        boxShadow: SHADOW
                     }}
                     onMouseEnter={(e) => {
                         e.currentTarget.style.borderColor = ORANGE;
                         e.currentTarget.style.transform = "translateY(-4px)";
+                        e.currentTarget.style.boxShadow = HOVER_SHADOW;
                     }}
                     onMouseLeave={(e) => {
                         e.currentTarget.style.borderColor = BORDER;
                         e.currentTarget.style.transform = "none";
+                        e.currentTarget.style.boxShadow = SHADOW;
                     }}
                 >
                     <div style={{ background: `${ORANGE}20`, height: 60, width: 60, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>🧠</div>
@@ -102,7 +111,7 @@ export default function ToolsDashboard({ business, setupWizard, onRestart }) {
                         <h2 style={{ fontSize: 20, fontWeight: 800, color: WHITE, marginBottom: 6 }}>2. Customer Psychology</h2>
                         <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.5 }}>Deep dive into your customer's mindset, uncover their desires, and leverage psychological buying triggers.</p>
                     </div>
-                    <button style={{ marginTop: "auto", background: ORANGE, border: "none", color: "#000", fontWeight: 800, padding: "12px", borderRadius: 10, cursor: "pointer", fontSize: 15 }}>Open Tool →</button>
+                    <button style={{ marginTop: "auto", background: ORANGE, border: "none", color: "#FFFFFF", fontWeight: 800, padding: "12px", borderRadius: 10, cursor: "pointer", fontSize: 15 }}>Open Tool →</button>
                 </div>
 
             </div>

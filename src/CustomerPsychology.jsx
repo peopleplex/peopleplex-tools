@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const DARK = "#131313";
-const CARD = "#1C1C1C";
-const WHITE = "#FFFFFF";
-const MUTED = "#A1A1AA";
+const DARK = "#F9FAFB";
+const CARD = "#FFFFFF";
+const WHITE = "#111827";
+const MUTED = "#6B7280";
 const ORANGE = "#FF6B35";
-const BORDER = "#2A2A2A";
+const BORDER = "#E5E7EB";
 
 export default function CustomerPsychology({ business, personas }) {
     const navigate = useNavigate();
@@ -27,7 +27,7 @@ export default function CustomerPsychology({ business, personas }) {
                         borderRadius: 12,
                         border: "none",
                         background: ORANGE,
-                        color: "#000",
+                        color: "#FFFFFF",
                         fontSize: 15,
                         fontWeight: 800,
                         cursor: "pointer",
@@ -135,7 +135,7 @@ Please generate a deep-dive Customer Psychology Audit strictly returning a raw J
                             borderRadius: 12,
                             border: "none",
                             background: ORANGE,
-                            color: "#000",
+                            color: "#FFFFFF",
                             fontSize: 15,
                             fontWeight: 800,
                             cursor: "pointer",
@@ -178,9 +178,9 @@ Please generate a deep-dive Customer Psychology Audit strictly returning a raw J
                         </ul>
                     </div>
 
-                    <div style={{ padding: 24, background: `linear-gradient(145deg, ${CARD}, #2a1a1a)`, borderRadius: 20, border: `1px solid ${ORANGE}50` }}>
+                    <div style={{ padding: 24, background: `linear-gradient(145deg, ${CARD}, #FFF5F0)`, borderRadius: 20, border: `1px solid ${ORANGE}50` }}>
                         <h2 style={{ fontSize: 18, fontWeight: 800, color: WHITE, marginBottom: 12 }}>Immediate Conversion Strategy</h2>
-                        <p style={{ color: "#e5e7eb", lineHeight: 1.6, fontSize: 15 }}>{report.conversionAdvice}</p>
+                        <p style={{ color: MUTED, lineHeight: 1.6, fontSize: 15 }}>{report.conversionAdvice}</p>
                     </div>
 
                     <button
