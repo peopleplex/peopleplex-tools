@@ -14,6 +14,9 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, collection, getDocs, getDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
+import { useNavigate, useLocation, Routes, Route } from "react-router-dom";
+import ToolsDashboard from "./ToolsDashboard.jsx";
+import CustomerPsychology from "./CustomerPsychology.jsx";
 
 const BOOKING_LINK = "https://iamhariharan.com/training-institutes";
 
@@ -4507,6 +4510,9 @@ function SharedReportView({ reportId }) {
 // ROOT APP
 // ══════════════════════════════════════════════════════════════
 export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const urlParams = new URLSearchParams(window.location.search);
   const sharedReportId = urlParams.get("report");
 
@@ -4519,9 +4525,13 @@ export default function App() {
   const [personas, setPersonas] = useState(null);
   const [answers, setAnswers] = useState({});
   const [leadId, setLeadId] = useState(null);
-  const [showDashboard, setShowDashboard] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const [user, setUser] = useState(undefined);
+
+  const isAudit = location.pathname === "/journey";
+  const isPsychology = location.pathname === "/psychology";
+  const showDashboard = location.pathname === "/history";
+  const showSettings = location.pathname === "/settings";
+  const isToolsDashboard = location.pathname === "/" || location.pathname === "/tools";
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -4536,10 +4546,6 @@ export default function App() {
     setPersonas(null);
     setAnswers({});
     setLeadId(null);
-  }
-
-  function handleLogoClick() {
-    setShowDashboard(!showDashboard);
   }
 
   if (user === undefined)
@@ -4558,8 +4564,6 @@ export default function App() {
       </div>
     );
   if (!user) return <AuthScreen />;
-
-  const isAudit = !showSettings && !showDashboard;
 
   return (
     <div className="layout-container">
@@ -4696,34 +4700,43 @@ export default function App() {
         </div>
 
         <button
+          className={`nav-btn ${isToolsDashboard ? "active" : "inactive"}`}
+          onClick={() => navigate("/")}
+        >
+          <span className="nav-btn-icon">📦</span>
+          <span>All Tools</span>
+        </button>
+
+        <button
           className={`nav-btn ${isAudit ? "active" : "inactive"}`}
           onClick={() => {
-            setShowDashboard(false);
-            setShowSettings(false);
-            if (isAudit && step === 0) restart();
+            navigate("/journey");
+            if (step === 0) restart();
           }}
         >
           <span className="nav-btn-icon">📝</span>
-          <span>New Audit</span>
+          <span>Journey Audit</span>
+        </button>
+
+        <button
+          className={`nav-btn ${isPsychology ? "active" : "inactive"}`}
+          onClick={() => navigate("/psychology")}
+        >
+          <span className="nav-btn-icon">🧠</span>
+          <span>Psychology Audit</span>
         </button>
 
         <button
           className={`nav-btn ${showDashboard ? "active" : "inactive"}`}
-          onClick={() => {
-            setShowDashboard(true);
-            setShowSettings(false);
-          }}
+          onClick={() => navigate("/history")}
         >
           <span className="nav-btn-icon">📊</span>
-          <span>My Audits</span>
+          <span>My History</span>
         </button>
 
         <button
           className={`nav-btn ${showSettings ? "active" : "inactive"}`}
-          onClick={() => {
-            setShowSettings(true);
-            setShowDashboard(false);
-          }}
+          onClick={() => navigate("/settings")}
         >
           <span className="nav-btn-icon">⚙️</span>
           <span>Settings</span>
@@ -4743,113 +4756,122 @@ export default function App() {
 
       {/* Main Content Area */}
       <div className="main-content">
-        {showSettings ? (
-          <UserProfileSettings
-            user={user}
-            onClose={() => setShowSettings(false)}
-          />
-        ) : showDashboard ? (
-          <UserDashboard
-            onClose={() => setShowDashboard(false)}
-            onLoadAudit={(lead, targetStep) => {
-              setBusiness(lead.business);
-              setPersonas(lead.personas);
-              setAnswers(lead.answers);
-              setLeadId(lead.id);
-              setStep(targetStep);
-              setShowDashboard(false);
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              maxWidth: 560,
-              margin: "0 auto",
-              padding: "40px 20px 60px",
-            }}
-          >
-            <Steps current={step} />
+        <Routes>
+          <Route path="/" element={<ToolsDashboard />} />
+          <Route path="/psychology" element={<CustomerPsychology />} />
 
-            {step === 0 && (
-              <StepDescribe
-                onNext={(d) => {
-                  setBusiness(d);
-                  const newLeadId = `audit_${Date.now()}`;
-                  setLeadId(newLeadId);
-                  const auditData = {
-                    id: newLeadId,
-                    businessName: d.businessName,
-                    additionalNotes: d.additionalNotes,
-                    industry: d.industry,
-                    location: d.location,
-                    websiteUrl: d.websiteUrl || "",
-                    gmbUrl: d.gmbUrl || "",
-                    socialUrl: d.socialUrl || "",
-                    pricingTier: d.pricingTier?.label || "Unknown",
-                    completedAt: new Date().toISOString(),
-                    source: "PeoplePlex App",
-                  };
+          <Route path="/settings" element={
+            <UserProfileSettings
+              user={user}
+              onClose={() => navigate("/")}
+            />
+          } />
 
-                  if (auth.currentUser) {
-                    setDoc(
-                      doc(
-                        db,
-                        "users",
-                        auth.currentUser.uid,
-                        "audits",
-                        newLeadId,
-                      ),
-                      auditData,
-                    ).catch((err) => {
-                      console.error("Firestore save error:", err);
-                    });
-                  }
+          <Route path="/history" element={
+            <UserDashboard
+              onClose={() => navigate("/")}
+              onLoadAudit={(lead, targetStep) => {
+                setBusiness(lead.business);
+                setPersonas(lead.personas);
+                setAnswers(lead.answers);
+                setLeadId(lead.id);
+                setStep(targetStep);
+                navigate("/journey");
+              }}
+            />
+          } />
 
-                  setStep(1);
-                }}
-              />
-            )}
-            {step === 1 && (
-              <StepPersonas
-                business={business}
-                onNext={(p) => {
-                  setPersonas(p);
-                  setStep(2);
-                }}
-                onBack={() => setStep(0)}
-              />
-            )}
-            {step === 2 && (
-              <StepJourney
-                business={business}
-                personas={personas}
-                onNext={(updatedPersonas) => {
-                  if (updatedPersonas) setPersonas(updatedPersonas);
-                  setStep(3);
-                }}
-                onBack={() => setStep(1)}
-              />
-            )}
-            {step === 3 && (
-              <StepAudit
-                onNext={(a) => {
-                  setAnswers(a);
-                  setStep(4);
-                }}
-                onBack={() => setStep(2)}
-              />
-            )}
-            {step === 4 && (
-              <StepResults
-                business={business}
-                personas={personas}
-                answers={answers}
-                leadId={leadId}
-                onRestart={restart}
-              />
-            )}
-          </div>
-        )}
+          <Route path="/journey" element={
+            <div
+              style={{
+                maxWidth: 560,
+                margin: "0 auto",
+                padding: "40px 20px 60px",
+              }}
+            >
+              <Steps current={step} />
+
+              {step === 0 && (
+                <StepDescribe
+                  onNext={(d) => {
+                    setBusiness(d);
+                    const newLeadId = `audit_${Date.now()}`;
+                    setLeadId(newLeadId);
+                    const auditData = {
+                      id: newLeadId,
+                      businessName: d.businessName,
+                      additionalNotes: d.additionalNotes,
+                      industry: d.industry,
+                      location: d.location,
+                      websiteUrl: d.websiteUrl || "",
+                      gmbUrl: d.gmbUrl || "",
+                      socialUrl: d.socialUrl || "",
+                      pricingTier: d.pricingTier?.label || "Unknown",
+                      completedAt: new Date().toISOString(),
+                      source: "PeoplePlex App",
+                    };
+
+                    if (auth.currentUser) {
+                      setDoc(
+                        doc(
+                          db,
+                          "users",
+                          auth.currentUser.uid,
+                          "audits",
+                          newLeadId,
+                        ),
+                        auditData,
+                      ).catch((err) => {
+                        console.error("Firestore save error:", err);
+                      });
+                    }
+
+                    setStep(1);
+                  }}
+                />
+              )}
+              {step === 1 && (
+                <StepPersonas
+                  business={business}
+                  onNext={(p) => {
+                    setPersonas(p);
+                    setStep(2);
+                  }}
+                  onBack={() => setStep(0)}
+                />
+              )}
+              {step === 2 && (
+                <StepJourney
+                  business={business}
+                  personas={personas}
+                  onNext={(updatedPersonas) => {
+                    if (updatedPersonas) setPersonas(updatedPersonas);
+                    setStep(3);
+                  }}
+                  onBack={() => setStep(1)}
+                />
+              )}
+              {step === 3 && (
+                <StepAudit
+                  onNext={(a) => {
+                    setAnswers(a);
+                    setStep(4);
+                  }}
+                  onBack={() => setStep(2)}
+                />
+              )}
+              {step === 4 && (
+                <StepResults
+                  business={business}
+                  personas={personas}
+                  answers={answers}
+                  leadId={leadId}
+                  onRestart={restart}
+                />
+              )}
+            </div>
+          } />
+        </Routes>
       </div>
     </div>
   );
