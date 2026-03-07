@@ -1,5 +1,5 @@
 // Vercel Serverless Function - Multi-Provider AI Proxy
-// Priority: GROQ_API_KEY (free, fast) → GEMINI_API_KEY → ANTHROPIC_API_KEY → OPENAI_API_KEY
+// Priority: ANTHROPIC_API_KEY → GROQ_API_KEY (free, fast) → GEMINI_API_KEY → OPENAI_API_KEY
 
 export default async function handler(req, res) {
   // ── CORS headers ─────────────────────────────────────────────
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { messages, prompt, model, max_tokens = 2000 } = req.body;
+    const { messages, prompt, model, max_tokens = 4000 } = req.body;
 
     let promptText = '';
     let apiMessages = [];
@@ -35,19 +35,48 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Either "messages" array or "prompt" string is required' });
     }
 
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
     const groqKey = process.env.GROQ_API_KEY;
     const geminiKey = process.env.GEMINI_API_KEY;
-    const anthropicKey = process.env.ANTHROPIC_API_KEY;
     const openaiKey = process.env.OPENAI_API_KEY;
 
     let resultText = '';
 
+    if (anthropicKey) {
+      // ══════════════════════════════════════════════════════════
+      // ANTHROPIC CLAUDE
+      // ══════════════════════════════════════════════════════════
+      console.log('Using Anthropic API...');
+      const apiModel = model || 'claude-3-sonnet-20240229'; // Fallback model
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': anthropicKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({ model: apiModel, max_tokens, messages: apiMessages, temperature: 0.7 }),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('Anthropic API error:', error);
+        // If Anthropic fails, we'll let the logic fall through to the next provider
+      } else {
+        // Anthropic returns the right format — return directly
+        const data = await response.json();
+        return res.status(200).json(data);
+      }
+
+    } 
+    
+    // Fallback to other providers if Anthropic is not available or fails
     if (groqKey) {
       // ══════════════════════════════════════════════════════════
       // GROQ — 100% FREE, No Credit Card, Ultra Fast
-      // Free tier: 6,000 tokens/min, 500,000 tokens/day
       // ══════════════════════════════════════════════════════════
-      console.log('Using Groq API (free)...');
+      console.log('Falling back to Groq API (free)...');
 
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -56,7 +85,7 @@ export default async function handler(req, res) {
           'Authorization': `Bearer ${groqKey}`,
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',   // Best free model on Groq
+          model: 'llama3-70b-8192',
           messages: apiMessages,
           max_tokens: max_tokens,
           temperature: 0.7,
@@ -67,20 +96,24 @@ export default async function handler(req, res) {
 
       if (!response.ok) {
         console.error('Groq API error:', responseText);
-        return res.status(response.status).json({ error: 'Groq API call failed', details: responseText });
+        // Let it fall through to the next provider
+      } else {
+        const data = JSON.parse(responseText);
+        resultText = data.choices[0].message.content;
+        // Return in Anthropic-compatible format
+        return res.status(200).json({ content: [{ type: 'text', text: resultText }] });
       }
 
-      const data = JSON.parse(responseText);
-      resultText = data.choices[0].message.content;
-
-    } else if (geminiKey) {
+    } 
+    
+    if (geminiKey) {
       // ══════════════════════════════════════════════════════════
       // GOOGLE GEMINI
       // ══════════════════════════════════════════════════════════
-      console.log('Using Google Gemini API...');
+      console.log('Falling back to Google Gemini API...');
 
-      const geminiModel = 'gemini-2.0-flash-001';
-      const url = `https://generativelanguage.googleapis.com/v1/models/${geminiModel}:generateContent?key=${geminiKey}`;
+      const geminiModel = 'gemini-1.5-flash-latest';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`;
 
       const response = await fetch(url, {
         method: 'POST',
@@ -95,46 +128,23 @@ export default async function handler(req, res) {
 
       if (!response.ok) {
         console.error('Gemini API error:', responseText);
-        return res.status(response.status).json({ error: 'Gemini API call failed', details: responseText });
+        // Let it fall through
+      } else {
+        const data = JSON.parse(responseText);
+        if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+            // Fall through
+        } else {
+            resultText = data.candidates[0].content.parts[0].text;
+            return res.status(200).json({ content: [{ type: 'text', text: resultText }] });
+        }
       }
-
-      const data = JSON.parse(responseText);
-      if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
-        return res.status(500).json({ error: 'Unexpected Gemini response format' });
-      }
-      resultText = data.candidates[0].content.parts[0].text;
-
-    } else if (anthropicKey) {
-      // ══════════════════════════════════════════════════════════
-      // ANTHROPIC CLAUDE
-      // ══════════════════════════════════════════════════════════
-      console.log('Using Anthropic API...');
-      const apiModel = model || 'claude-sonnet-4-20250514';
-
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': anthropicKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({ model: apiModel, max_tokens, messages: apiMessages }),
-      });
-
-      if (!response.ok) {
-        const error = await response.text();
-        return res.status(response.status).json({ error: 'API call failed', details: error });
-      }
-
-      // Anthropic already returns the right format — return directly
-      const data = await response.json();
-      return res.status(200).json(data);
-
-    } else if (openaiKey) {
+    } 
+    
+    if (openaiKey) {
       // ══════════════════════════════════════════════════════════
       // OPENAI GPT
       // ══════════════════════════════════════════════════════════
-      console.log('Using OpenAI API...');
+      console.log('Falling back to OpenAI API...');
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -143,7 +153,7 @@ export default async function handler(req, res) {
           'Authorization': `Bearer ${openaiKey}`,
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'gpt-4o',
           messages: apiMessages,
           max_tokens,
           temperature: 0.7,
@@ -151,23 +161,17 @@ export default async function handler(req, res) {
       });
 
       const responseText = await response.text();
-      if (!response.ok) {
-        return res.status(response.status).json({ error: 'API call failed', details: responseText });
+      if (response.ok) {
+        const data = JSON.parse(responseText);
+        resultText = data.choices[0].message.content;
+        return res.status(200).json({ content: [{ type: 'text', text: resultText }] });
       }
-
-      const data = JSON.parse(responseText);
-      resultText = data.choices[0].message.content;
-
-    } else {
-      return res.status(500).json({
-        error: 'No API key configured',
-        message: 'Add GROQ_API_KEY (free!), GEMINI_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY to Vercel environment variables',
-      });
     }
 
-    // Return in Anthropic-compatible format (frontend expects this)
-    return res.status(200).json({
-      content: [{ type: 'text', text: resultText }],
+    // If all API calls fail
+    return res.status(500).json({
+        error: 'All API providers failed',
+        message: 'Could not connect to any configured AI service. Please check your API keys and service status.',
     });
 
   } catch (error) {

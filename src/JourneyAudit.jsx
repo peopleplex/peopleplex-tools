@@ -17,16 +17,17 @@ import { auth, db } from "./firebase";
 import { useNavigate, useLocation, Routes, Route } from "react-router-dom";
 import ToolsDashboard from "./ToolsDashboard.jsx";
 import CustomerPsychology from "./CustomerPsychology.jsx";
+import UserProfileSettings from "./UserProfileSettings.jsx";
 
 const BOOKING_LINK = "https://iamhariharan.com/training-institutes";
 
 // ── Brand tokens ──────────────────────────────────────────────
-const ORANGE = "#FF6B35";
-const DARK = "#F9FAFB";
-const CARD = "#FFFFFF";
-const BORDER = "#E5E7EB";
-const MUTED = "#4B5563";
-const WHITE = "#000000";
+const PRIMARY_BLUE = "#007AFF";
+const DARK_MODE_BACKGROUND = "#000000";
+const CARD_BACKGROUND = "#1C1C1E";
+const BORDER_COLOR = "#3A3A3C";
+const MUTED_COLOR = "#8E8E93";
+const TEXT_COLOR = "#FFFFFF";
 
 // ── Audit questions per journey stage ─────────────────────────
 const JOURNEY_STAGES = [
@@ -104,9 +105,9 @@ const JOURNEY_STAGES = [
 
 // ── Helpers ────────────────────────────────────────────────────
 function scoreColor(pct) {
-  if (pct >= 80) return "#22c55e";
-  if (pct >= 50) return ORANGE;
-  return "#ef4444";
+  if (pct >= 80) return "#34C759";
+  if (pct >= 50) return PRIMARY_BLUE;
+  return "#FF3B30";
 }
 function scoreLabel(pct) {
   if (pct >= 80) return "Strong";
@@ -120,14 +121,15 @@ const Pill = ({ children, active, onClick }) => (
   <button
     onClick={onClick}
     style={{
-      padding: "6px 16px",
+      padding: "8px 16px",
       borderRadius: 999,
-      border: `1px solid ${active ? ORANGE : BORDER}`,
-      background: active ? `${ORANGE}18` : "transparent",
-      color: active ? ORANGE : MUTED,
-      fontSize: 13,
+      border: `1px solid ${active ? PRIMARY_BLUE : BORDER_COLOR}`,
+      background: active ? `${PRIMARY_BLUE}30` : "transparent",
+      color: active ? PRIMARY_BLUE : MUTED_COLOR,
+      fontSize: 14,
       cursor: "pointer",
       transition: "all .2s",
+      fontWeight: 500,
     }}
   >
     {children}
@@ -138,10 +140,11 @@ const Input = ({ label, placeholder, value, onChange, textarea }) => (
   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
     <label
       style={{
-        fontSize: 13,
-        color: MUTED,
-        letterSpacing: ".05em",
+        fontSize: 14,
+        color: MUTED_COLOR,
+        letterSpacing: ".02em",
         textTransform: "uppercase",
+        fontWeight: 600,
       }}
     >
       {label}
@@ -153,12 +156,12 @@ const Input = ({ label, placeholder, value, onChange, textarea }) => (
         value={value}
         onChange={(e) => onChange(e.target.value)}
         style={{
-          background: CARD,
-          border: `1px solid ${BORDER}`,
-          borderRadius: 10,
+          background: CARD_BACKGROUND,
+          border: `1px solid ${BORDER_COLOR}`,
+          borderRadius: 12,
           padding: "14px 16px",
-          color: WHITE,
-          fontSize: 15,
+          color: TEXT_COLOR,
+          fontSize: 16,
           resize: "vertical",
           outline: "none",
           fontFamily: "inherit",
@@ -170,12 +173,12 @@ const Input = ({ label, placeholder, value, onChange, textarea }) => (
         value={value}
         onChange={(e) => onChange(e.target.value)}
         style={{
-          background: CARD,
-          border: `1px solid ${BORDER}`,
-          borderRadius: 10,
+          background: CARD_BACKGROUND,
+          border: `1px solid ${BORDER_COLOR}`,
+          borderRadius: 12,
           padding: "14px 16px",
-          color: WHITE,
-          fontSize: 15,
+          color: TEXT_COLOR,
+          fontSize: 16,
           outline: "none",
           fontFamily: "inherit",
         }}
@@ -184,22 +187,23 @@ const Input = ({ label, placeholder, value, onChange, textarea }) => (
   </div>
 );
 
-const OrangeBtn = ({ children, onClick, disabled, fullWidth, secondary }) => (
+const GradientButton = ({ children, onClick, disabled, fullWidth, secondary }) => (
   <button
     onClick={onClick}
     disabled={disabled}
     style={{
       width: fullWidth ? "100%" : "auto",
-      padding: "15px 28px",
-      borderRadius: 12,
-      border: secondary ? `1px solid ${BORDER}` : "none",
-      background: secondary ? "transparent" : disabled ? BORDER : ORANGE,
-      color: disabled ? MUTED : secondary ? MUTED : "#FFFFFF",
-      fontSize: 15,
+      padding: "16px 28px",
+      borderRadius: 14,
+      border: secondary ? `1.5px solid ${BORDER_COLOR}` : "none",
+      background: secondary ? "transparent" : disabled ? BORDER_COLOR : `linear-gradient(45deg, ${PRIMARY_BLUE}, #00AFFF)`,
+      color: disabled ? MUTED_COLOR : secondary ? MUTED_COLOR : "#FFFFFF",
+      fontSize: 16,
       fontWeight: 700,
       cursor: disabled ? "not-allowed" : "pointer",
-      transition: "all .2s",
+      transition: "all .2s ease-in-out",
       letterSpacing: ".02em",
+      boxShadow: secondary || disabled ? "none" : "0 4px 15px 0 rgba(0, 122, 255, 0.35)",
     }}
   >
     {children}
@@ -232,33 +236,34 @@ const Steps = ({ current }) => {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: 6,
+              gap: 8,
             }}
           >
             <div
               style={{
-                width: 32,
-                height: 32,
+                width: 36,
+                height: 36,
                 borderRadius: "50%",
                 background:
-                  i < current ? ORANGE : i === current ? ORANGE : CARD,
-                border: `2px solid ${i <= current ? ORANGE : BORDER}`,
+                  i < current ? `linear-gradient(45deg, ${PRIMARY_BLUE}, #00AFFF)` : i === current ? CARD_BACKGROUND : "transparent",
+                border: `2px solid ${i <= current ? PRIMARY_BLUE : BORDER_COLOR}`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: 700,
-                color: i <= current ? "#000" : MUTED,
-                transition: "all .3s",
+                color: i <= current ? "#FFFFFF" : MUTED_COLOR,
+                transition: "all .3s ease-in-out",
               }}
             >
               {i < current ? "✓" : i + 1}
             </div>
             <span
               style={{
-                fontSize: 11,
-                color: i === current ? ORANGE : MUTED,
+                fontSize: 12,
+                color: i === current ? PRIMARY_BLUE : MUTED_COLOR,
                 whiteSpace: "nowrap",
+                fontWeight: i === current ? 600 : 400,
               }}
             >
               {s}
@@ -268,11 +273,11 @@ const Steps = ({ current }) => {
             <div
               style={{
                 flex: 1,
-                height: 1,
+                height: 2,
                 margin: "0 8px",
-                marginBottom: 20,
-                background: i < current ? ORANGE : BORDER,
-                transition: "all .3s",
+                marginBottom: 24,
+                background: i < current ? PRIMARY_BLUE : BORDER_COLOR,
+                transition: "all .3s ease-in-out",
               }}
             />
           )}
@@ -290,14 +295,14 @@ const Spinner = ({ message }) => (
         width: 48,
         height: 48,
         borderRadius: "50%",
-        border: `3px solid ${BORDER}`,
-        borderTop: `3px solid ${ORANGE}`,
-        margin: "0 auto 20px",
+        border: `4px solid ${BORDER_COLOR}`,
+        borderTop: `4px solid ${PRIMARY_BLUE}`,
+        margin: "0 auto 24px",
         animation: "spin 1s linear infinite",
       }}
     />
     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    <p style={{ color: MUTED, fontSize: 15 }}>{message}</p>
+    <p style={{ color: MUTED_COLOR, fontSize: 16 }}>{message}</p>
   </div>
 );
 
@@ -438,7 +443,7 @@ const PRICING_TIERS = [
     label: "Luxury",
     tag: "Exclusive Market",
     icon: "◇",
-    color: "#FF6B35",
+    color: PRIMARY_BLUE,
     description: "Price is secondary. Exclusivity, prestige, and perfection.",
   },
 ];
@@ -481,26 +486,26 @@ function StepDescribe({ onNext }) {
       <div style={{ marginBottom: 32 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
           {[1, 2, 3].map((s) => (
-            <div key={s} style={{ flex: 1, height: 6, borderRadius: 3, background: setupStep >= s ? ORANGE : BORDER, transition: "background .3s" }} />
+            <div key={s} style={{ flex: 1, height: 6, borderRadius: 3, background: setupStep >= s ? PRIMARY_BLUE : BORDER_COLOR, transition: "background .3s" }} />
           ))}
         </div>
 
         {setupStep === 1 && (
           <>
-            <h2 style={{ fontSize: 24, fontWeight: 800, color: WHITE, margin: "0 0 8px 0" }}>Step 1: Core Identity</h2>
-            <p style={{ color: MUTED, margin: 0, fontSize: 14 }}>Establish the foundational identity of the business.</p>
+            <h2 style={{ fontSize: 28, fontWeight: 800, color: TEXT_COLOR, margin: "0 0 8px 0" }}>Step 1: Core Identity</h2>
+            <p style={{ color: MUTED_COLOR, margin: 0, fontSize: 16 }}>Establish the foundational identity of the business.</p>
           </>
         )}
         {setupStep === 2 && (
           <>
-            <h2 style={{ fontSize: 24, fontWeight: 800, color: WHITE, margin: "0 0 8px 0" }}>Step 2: Digital Footprint</h2>
-            <p style={{ color: MUTED, margin: 0, fontSize: 14 }}>Link their core channels so the AI can analyze their current presence.</p>
+            <h2 style={{ fontSize: 28, fontWeight: 800, color: TEXT_COLOR, margin: "0 0 8px 0" }}>Step 2: Digital Footprint</h2>
+            <p style={{ color: MUTED_COLOR, margin: 0, fontSize: 16 }}>Link their core channels so the AI can analyze their current presence.</p>
           </>
         )}
         {setupStep === 3 && (
           <>
-            <h2 style={{ fontSize: 24, fontWeight: 800, color: WHITE, margin: "0 0 8px 0" }}>Step 3: Market Positioning</h2>
-            <p style={{ color: MUTED, margin: 0, fontSize: 14 }}>Determine where their offer sits in the wider market ecosystem.</p>
+            <h2 style={{ fontSize: 28, fontWeight: 800, color: TEXT_COLOR, margin: "0 0 8px 0" }}>Step 3: Market Positioning</h2>
+            <p style={{ color: MUTED_COLOR, margin: 0, fontSize: 16 }}>Determine where their offer sits in the wider market ecosystem.</p>
           </>
         )}
       </div>
@@ -534,9 +539,9 @@ function StepDescribe({ onNext }) {
           />
 
           <div style={{ marginTop: 8 }}>
-            <OrangeBtn fullWidth disabled={!step1Ready} onClick={() => setSetupStep(2)}>
+            <GradientButton fullWidth disabled={!step1Ready} onClick={() => setSetupStep(2)}>
               Next: Digital Footprint →
-            </OrangeBtn>
+            </GradientButton>
           </div>
         </div>
       )}
@@ -569,25 +574,25 @@ function StepDescribe({ onNext }) {
                 padding: "14px 24px",
                 borderRadius: 12,
                 background: "transparent",
-                border: `1.5px solid ${BORDER}`,
-                color: WHITE,
+                border: `1.5px solid ${BORDER_COLOR}`,
+                color: TEXT_COLOR,
                 fontWeight: 700,
                 cursor: "pointer",
                 transition: "all .2s"
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = MUTED;
+                e.currentTarget.style.borderColor = MUTED_COLOR;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = BORDER;
+                e.currentTarget.style.borderColor = BORDER_COLOR;
               }}
             >
               ← Back
             </button>
             <div style={{ flex: 1 }}>
-              <OrangeBtn fullWidth onClick={() => setSetupStep(3)}>
+              <GradientButton fullWidth onClick={() => setSetupStep(3)}>
                 Next: Market Positioning →
-              </OrangeBtn>
+              </GradientButton>
             </div>
           </div>
         </div>
@@ -598,19 +603,20 @@ function StepDescribe({ onNext }) {
           <div>
             <div
               style={{
-                fontSize: 13,
-                color: MUTED,
-                letterSpacing: ".05em",
+                fontSize: 14,
+                color: MUTED_COLOR,
+                letterSpacing: ".02em",
                 textTransform: "uppercase",
                 marginBottom: 6,
+                fontWeight: 600,
               }}
             >
               Pricing Tier
             </div>
             <p
               style={{
-                fontSize: 13,
-                color: MUTED,
+                fontSize: 14,
+                color: MUTED_COLOR,
                 marginBottom: 14,
                 lineHeight: 1.5,
               }}
@@ -631,20 +637,20 @@ function StepDescribe({ onNext }) {
                       gap: 14,
                       padding: "16px 18px",
                       borderRadius: 12,
-                      border: "1.5px solid " + (sel ? tier.color : BORDER),
-                      background: sel ? tier.color + "12" : CARD,
+                      border: "1.5px solid " + (sel ? tier.color : BORDER_COLOR),
+                      background: sel ? tier.color + "1A" : CARD_BACKGROUND,
                       cursor: "pointer",
-                      transition: "all .2s",
+                      transition: "all .2s ease-in-out",
                     }}
                   >
                     <div
                       style={{
-                        width: 20,
-                        height: 20,
+                        width: 22,
+                        height: 22,
                         borderRadius: "50%",
                         flexShrink: 0,
                         marginTop: 2,
-                        border: "2px solid " + (sel ? tier.color : BORDER),
+                        border: "2px solid " + (sel ? tier.color : BORDER_COLOR),
                         background: sel ? tier.color : "transparent",
                         display: "flex",
                         alignItems: "center",
@@ -655,10 +661,10 @@ function StepDescribe({ onNext }) {
                       {sel && (
                         <div
                           style={{
-                            width: 8,
-                            height: 8,
+                            width: 10,
+                            height: 10,
                             borderRadius: "50%",
-                            background: "#000",
+                            background: "#FFFFFF",
                           }}
                         />
                       )}
@@ -669,25 +675,25 @@ function StepDescribe({ onNext }) {
                           display: "flex",
                           alignItems: "center",
                           gap: 8,
-                          marginBottom: 3,
+                          marginBottom: 4,
                           flexWrap: "wrap",
                         }}
                       >
                         <span
                           style={{
-                            fontSize: 15,
+                            fontSize: 16,
                             fontWeight: 700,
-                            color: sel ? WHITE : "#aaa",
+                            color: sel ? TEXT_COLOR : MUTED_COLOR,
                           }}
                         >
                           {tier.label}
                         </span>
                         <span
                           style={{
-                            fontSize: 11,
-                            padding: "2px 8px",
+                            fontSize: 12,
+                            padding: "3px 10px",
                             borderRadius: 999,
-                            background: tier.color + "22",
+                            background: tier.color + "33",
                             color: tier.color,
                             fontWeight: 600,
                           }}
@@ -696,15 +702,15 @@ function StepDescribe({ onNext }) {
                         </span>
                       </div>
                       <div
-                        style={{ fontSize: 13, color: MUTED, lineHeight: 1.4 }}
+                        style={{ fontSize: 14, color: MUTED_COLOR, lineHeight: 1.5 }}
                       >
                         {tier.description}
                       </div>
                       <div
                         style={{
-                          fontSize: 12,
-                          color: sel ? tier.color : "#444",
-                          marginTop: 4,
+                          fontSize: 13,
+                          color: sel ? tier.color : "#666",
+                          marginTop: 6,
                           fontWeight: 500,
                         }}
                       >
@@ -724,14 +730,14 @@ function StepDescribe({ onNext }) {
                 style={{
                   marginTop: 14,
                   padding: "14px 16px",
-                  background: pricingTier.color + "10",
-                  border: "1px solid " + pricingTier.color + "30",
-                  borderRadius: 10,
+                  background: pricingTier.color + "15",
+                  border: "1px solid " + pricingTier.color + "40",
+                  borderRadius: 12,
                 }}
               >
                 <div
                   style={{
-                    fontSize: 12,
+                    fontSize: 13,
                     color: pricingTier.color,
                     fontWeight: 700,
                     marginBottom: 4,
@@ -739,7 +745,7 @@ function StepDescribe({ onNext }) {
                 >
                   {pricingTier.icon} {pricingTier.tag} Customer Insight
                 </div>
-                <div style={{ fontSize: 13, color: MUTED, lineHeight: 1.5 }}>
+                <div style={{ fontSize: 14, color: MUTED_COLOR, lineHeight: 1.6 }}>
                   {TIER_INSIGHTS[pricingTier.id]}
                 </div>
               </div>
@@ -761,23 +767,23 @@ function StepDescribe({ onNext }) {
                 padding: "14px 24px",
                 borderRadius: 12,
                 background: "transparent",
-                border: `1.5px solid ${BORDER}`,
-                color: WHITE,
+                border: `1.5px solid ${BORDER_COLOR}`,
+                color: TEXT_COLOR,
                 fontWeight: 700,
                 cursor: "pointer",
                 transition: "all .2s"
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = MUTED;
+                e.currentTarget.style.borderColor = MUTED_COLOR;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = BORDER;
+                e.currentTarget.style.borderColor = BORDER_COLOR;
               }}
             >
               ← Back
             </button>
             <div style={{ flex: 1 }}>
-              <OrangeBtn
+              <GradientButton
                 fullWidth
                 disabled={!step3Ready}
                 onClick={() =>
@@ -795,7 +801,7 @@ function StepDescribe({ onNext }) {
                 }
               >
                 Complete Setup 🚀
-              </OrangeBtn>
+              </GradientButton>
             </div>
           </div>
         </div>
@@ -885,7 +891,7 @@ Return ONLY valid JSON, no markdown, no explanation:
     return (
       <div style={{ textAlign: "center", padding: 40 }}>
         <p style={{ color: "#ef4444", marginBottom: 20 }}>{error}</p>
-        <OrangeBtn onClick={generatePersonas}>Try Again</OrangeBtn>
+        <GradientButton onClick={generatePersonas}>Try Again</GradientButton>
       </div>
     );
 
@@ -894,32 +900,33 @@ Return ONLY valid JSON, no markdown, no explanation:
       <div style={{ marginBottom: 28 }}>
         <div
           style={{
-            fontSize: 13,
-            color: ORANGE,
+            fontSize: 14,
+            color: PRIMARY_BLUE,
             letterSpacing: ".1em",
             textTransform: "uppercase",
             marginBottom: 8,
+            fontWeight: 600,
           }}
         >
           Step 2 of 5
         </div>
-        <h2 style={{ fontSize: 26, fontWeight: 800, color: WHITE, margin: 0 }}>
+        <h2 style={{ fontSize: 28, fontWeight: 800, color: TEXT_COLOR, margin: 0 }}>
           Who Is Your Customer?
         </h2>
-        <p style={{ color: MUTED, marginTop: 8, fontSize: 14 }}>
+        <p style={{ color: MUTED_COLOR, marginTop: 8, fontSize: 16 }}>
           Here are 3 unique personas we generated for your business.
         </p>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {personas?.map((p) => (
           <div
             key={p.id}
             style={{
-              background: CARD,
-              border: `1.5px solid ${BORDER}`,
-              borderRadius: 14,
-              padding: "20px 22px",
+              background: CARD_BACKGROUND,
+              border: `1.5px solid ${BORDER_COLOR}`,
+              borderRadius: 16,
+              padding: "24px",
             }}
           >
             <div
@@ -934,37 +941,37 @@ Return ONLY valid JSON, no markdown, no explanation:
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 10,
+                    gap: 12,
                     marginBottom: 4,
                   }}
                 >
-                  <span style={{ fontSize: 18, fontWeight: 800, color: WHITE }}>
+                  <span style={{ fontSize: 20, fontWeight: 800, color: TEXT_COLOR }}>
                     {p.name}
                   </span>
                   <span
                     style={{
-                      fontSize: 11,
-                      padding: "3px 10px",
+                      fontSize: 12,
+                      padding: "4px 12px",
                       borderRadius: 999,
-                      background: `${ORANGE}20`,
-                      color: ORANGE,
+                      background: `${PRIMARY_BLUE}30`,
+                      color: PRIMARY_BLUE,
                       fontWeight: 600,
                     }}
                   >
                     {p.archetype}
                   </span>
                 </div>
-                <div style={{ fontSize: 13, color: MUTED }}>
+                <div style={{ fontSize: 14, color: MUTED_COLOR }}>
                   {p.age} · {p.role}
                 </div>
               </div>
             </div>
             <p
               style={{
-                fontSize: 14,
-                color: MUTED,
-                margin: "10px 0 12px",
-                lineHeight: 1.5,
+                fontSize: 15,
+                color: MUTED_COLOR,
+                margin: "12px 0 16px",
+                lineHeight: 1.6,
               }}
             >
               {p.summary}
@@ -973,7 +980,7 @@ Return ONLY valid JSON, no markdown, no explanation:
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
-                gap: 10,
+                gap: 12,
               }}
             >
               {[
@@ -983,15 +990,15 @@ Return ONLY valid JSON, no markdown, no explanation:
                 <div
                   key={item.label}
                   style={{
-                    background: "#F3F4F6",
-                    borderRadius: 8,
-                    padding: "10px 12px",
+                    background: "#1C1C1E",
+                    borderRadius: 10,
+                    padding: "12px 14px",
                   }}
                 >
-                  <div style={{ fontSize: 11, color: MUTED, marginBottom: 4 }}>
+                  <div style={{ fontSize: 12, color: MUTED_COLOR, marginBottom: 4 }}>
                     {item.label}
                   </div>
-                  <div style={{ fontSize: 13, color: WHITE, lineHeight: 1.4 }}>
+                  <div style={{ fontSize: 14, color: TEXT_COLOR, lineHeight: 1.5 }}>
                     {item.value}
                   </div>
                 </div>
@@ -1002,16 +1009,16 @@ Return ONLY valid JSON, no markdown, no explanation:
       </div>
 
       <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
-        <OrangeBtn secondary onClick={onBack}>
+        <GradientButton secondary onClick={onBack}>
           ← Back
-        </OrangeBtn>
-        <OrangeBtn
+        </GradientButton>
+        <GradientButton
           fullWidth
           disabled={!personas}
           onClick={() => onNext(personas)}
         >
           Explore Their Journeys →
-        </OrangeBtn>
+        </GradientButton>
       </div>
     </div>
   );
@@ -1107,7 +1114,7 @@ Persona 3: ${personas[2] ? personas[2].name : ""} (${personas[2] ? personas[2].a
 
 Generate a SPECIFIC, DETAILED journey map for EACH persona. Make each stage unique and relevant to that exact persona.
 Return ONLY valid JSON, no markdown backticks, no explanation:
-{"journeys":[{"personaIdx":0,"stages":[{"stage":"Aware","intent":"specific intent","behaviour":"specific behaviour","painPoint":"specific pain point","touchpoint":"specific touchpoints","insight":"specific insight"},{"stage":"Appeal","intent":"...","behaviour":"...","painPoint":"...","touchpoint":"...","insight":"..."},{"stage":"Ask","intent":"...","behaviour":"...","painPoint":"...","touchpoint":"...","insight":"..."},{"stage":"Act","intent":"...","behaviour":"...","painPoint":"...","touchpoint":"...","insight":"..."},{"stage":"Advocate","intent":"...","behaviour":"...","painPoint":"...","touchpoint":"...","insight":"..."}]},{"personaIdx":1,"stages":[...]},{"personaIdx":2,"stages":[...]}]}`,
+{"journeys":[{"personaIdx":0,"stages":[{"stage":"Aware","intent":"specific intent","behaviour":"specific behaviour","painPoint":"specific pain point","touchpoint":"specific touchpoints","insight":"specific insight"},{"stage":"Appeal","intent":"...","behaviour":"...","painPoint":"...","touchpoint":"...","insight":"..."},{"stage":"Ask","intent":"...","behaviour":"...","painPoint":"...","touchpoint":"...","insight":"..."},{"stage":"Act","intent":"...","behaviour":"...","painPoint":"...","touchpoint":"...","insight":"..."},{"stage":"Advocate","intent":"...","behaviour":"...","painPoint":"...","touchpoint":"...","insight":"..."}]},{"personaIdx":1,"stages":[]},{"personaIdx":2,"stages":[]}]}`,
             },
           ],
         }),
@@ -1158,19 +1165,20 @@ Return ONLY valid JSON, no markdown backticks, no explanation:
       <div style={{ marginBottom: 24 }}>
         <div
           style={{
-            fontSize: 13,
-            color: ORANGE,
+            fontSize: 14,
+            color: PRIMARY_BLUE,
             letterSpacing: ".1em",
             textTransform: "uppercase",
             marginBottom: 8,
+            fontWeight: 600,
           }}
         >
           Step 3 of 5
         </div>
-        <h2 style={{ fontSize: 26, fontWeight: 800, color: WHITE, margin: 0 }}>
+        <h2 style={{ fontSize: 28, fontWeight: 800, color: TEXT_COLOR, margin: 0 }}>
           Customer Journeys
         </h2>
-        <p style={{ color: MUTED, marginTop: 6, fontSize: 14 }}>
+        <p style={{ color: MUTED_COLOR, marginTop: 8, fontSize: 16 }}>
           Here is how each persona navigates the 5 stages to becoming your
           customer.
         </p>
@@ -1194,16 +1202,16 @@ Return ONLY valid JSON, no markdown backticks, no explanation:
               setActiveStage(0);
             }}
             style={{
-              padding: "10px 16px",
+              padding: "10px 18px",
               borderRadius: 12,
-              background: activePersonaIdx === i ? `${ORANGE}15` : CARD,
-              border: `1px solid ${activePersonaIdx === i ? ORANGE : BORDER}`,
-              color: activePersonaIdx === i ? ORANGE : MUTED,
-              fontSize: 14,
+              background: activePersonaIdx === i ? `${PRIMARY_BLUE}30` : CARD_BACKGROUND,
+              border: `1px solid ${activePersonaIdx === i ? PRIMARY_BLUE : BORDER_COLOR}`,
+              color: activePersonaIdx === i ? PRIMARY_BLUE : MUTED_COLOR,
+              fontSize: 15,
               fontWeight: activePersonaIdx === i ? 700 : 500,
               cursor: "pointer",
               whiteSpace: "nowrap",
-              transition: "all .2s",
+              transition: "all .2s ease-in-out",
             }}
           >
             {p.name}
@@ -1229,13 +1237,13 @@ Return ONLY valid JSON, no markdown backticks, no explanation:
               padding: "8px 16px",
               borderRadius: 999,
               border: "none",
-              background: activeStage === i ? ORANGE : CARD,
-              color: activeStage === i ? "#000" : MUTED,
-              fontSize: 13,
-              fontWeight: activeStage === i ? 700 : 400,
+              background: activeStage === i ? PRIMARY_BLUE : CARD_BACKGROUND,
+              color: activeStage === i ? "#FFFFFF" : MUTED_COLOR,
+              fontSize: 14,
+              fontWeight: activeStage === i ? 700 : 500,
               cursor: "pointer",
               whiteSpace: "nowrap",
-              transition: "all .2s",
+              transition: "all .2s ease-in-out",
             }}
           >
             {s.icon} {s.label}
@@ -1247,35 +1255,36 @@ Return ONLY valid JSON, no markdown backticks, no explanation:
       {stage && (
         <div
           style={{
-            background: CARD,
-            border: `1px solid ${BORDER}`,
-            borderRadius: 16,
+            background: CARD_BACKGROUND,
+            border: `1px solid ${BORDER_COLOR}`,
+            borderRadius: 18,
             padding: 24,
           }}
         >
-          <div style={{ marginBottom: 18 }}>
+          <div style={{ marginBottom: 20 }}>
             <div
               style={{
-                fontSize: 12,
-                color: ORANGE,
+                fontSize: 13,
+                color: PRIMARY_BLUE,
                 fontWeight: 800,
                 textTransform: "uppercase",
                 marginBottom: 6,
+                letterSpacing: '.05em',
               }}
             >
               {activePersona?.name}'s {stageInfo.label} Experience
             </div>
             <div
               style={{
-                fontSize: 22,
+                fontSize: 24,
                 fontWeight: 800,
-                color: WHITE,
+                color: TEXT_COLOR,
                 marginBottom: 4,
               }}
             >
               {stageInfo.icon} {stage.stage}
             </div>
-            <div style={{ fontSize: 14, color: MUTED }}>
+            <div style={{ fontSize: 15, color: MUTED_COLOR, lineHeight: 1.5 }}>
               {stageInfo.description}
             </div>
           </div>
@@ -1290,28 +1299,29 @@ Return ONLY valid JSON, no markdown backticks, no explanation:
               <div
                 key={item.label}
                 style={{
-                  background: "#F3F4F6",
-                  borderRadius: 10,
+                  background: "#1C1C1E",
+                  borderRadius: 12,
                   padding: "14px 16px",
                   display: "flex",
-                  gap: 12,
+                  gap: 14,
                   alignItems: "flex-start",
                 }}
               >
-                <span style={{ fontSize: 18 }}>{item.icon}</span>
+                <span style={{ fontSize: 20, marginTop: 2 }}>{item.icon}</span>
                 <div>
                   <div
                     style={{
-                      fontSize: 11,
-                      color: MUTED,
+                      fontSize: 12,
+                      color: MUTED_COLOR,
                       textTransform: "uppercase",
                       letterSpacing: ".06em",
                       marginBottom: 4,
+                      fontWeight: 600,
                     }}
                   >
                     {item.label}
                   </div>
-                  <div style={{ fontSize: 14, color: WHITE, lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 15, color: TEXT_COLOR, lineHeight: 1.6 }}>
                     {item.value}
                   </div>
                 </div>
@@ -1323,34 +1333,35 @@ Return ONLY valid JSON, no markdown backticks, no explanation:
             style={{
               marginTop: 16,
               padding: "14px 16px",
-              background: `${ORANGE}10`,
-              border: `1px solid ${ORANGE}30`,
-              borderRadius: 10,
+              background: `${PRIMARY_BLUE}15`,
+              border: `1px solid ${PRIMARY_BLUE}40`,
+              borderRadius: 12,
             }}
           >
             <div
               style={{
-                fontSize: 11,
-                color: ORANGE,
+                fontSize: 12,
+                color: PRIMARY_BLUE,
                 textTransform: "uppercase",
                 letterSpacing: ".06em",
                 marginBottom: 4,
+                fontWeight: 700,
               }}
             >
               💡 Key Insight
             </div>
-            <div style={{ fontSize: 14, color: WHITE, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 15, color: TEXT_COLOR, lineHeight: 1.6 }}>
               {stage.insight}
             </div>
           </div>
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
-        <OrangeBtn secondary onClick={onBack}>
+      <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
+        <GradientButton secondary onClick={onBack}>
           ← Back
-        </OrangeBtn>
-        <OrangeBtn
+        </GradientButton>
+        <GradientButton
           fullWidth
           onClick={() => {
             const updatedPersonas = personas.map((p, idx) => {
@@ -1361,7 +1372,7 @@ Return ONLY valid JSON, no markdown backticks, no explanation:
           }}
         >
           Audit Your Business →
-        </OrangeBtn>
+        </GradientButton>
       </div>
     </div>
   );
@@ -1401,19 +1412,20 @@ function StepAudit({ onNext, onBack }) {
       <div style={{ marginBottom: 24 }}>
         <div
           style={{
-            fontSize: 13,
-            color: ORANGE,
+            fontSize: 14,
+            color: PRIMARY_BLUE,
             letterSpacing: ".1em",
             textTransform: "uppercase",
             marginBottom: 8,
+            fontWeight: 600,
           }}
         >
           Step 4 of 5
         </div>
-        <h2 style={{ fontSize: 26, fontWeight: 800, color: WHITE, margin: 0 }}>
+        <h2 style={{ fontSize: 28, fontWeight: 800, color: TEXT_COLOR, margin: 0 }}>
           Audit Your Business
         </h2>
-        <p style={{ color: MUTED, marginTop: 6, fontSize: 14 }}>
+        <p style={{ color: MUTED_COLOR, marginTop: 8, fontSize: 16 }}>
           Check Yes for everything your business already does well. Be honest.
         </p>
       </div>
@@ -1421,22 +1433,22 @@ function StepAudit({ onNext, onBack }) {
       {/* Overall progress */}
       <div
         style={{
-          background: CARD,
-          border: `1px solid ${BORDER}`,
-          borderRadius: 12,
-          padding: "14px 18px",
+          background: CARD_BACKGROUND,
+          border: `1px solid ${BORDER_COLOR}`,
+          borderRadius: 14,
+          padding: "16px 20px",
           display: "flex",
           alignItems: "center",
           gap: 16,
-          marginBottom: 20,
+          marginBottom: 24,
         }}
       >
         <div
           style={{
-            width: 52,
-            height: 52,
+            width: 56,
+            height: 56,
             borderRadius: "50%",
-            background: `conic-gradient(${scoreColor(totalPct)} ${totalPct * 3.6}deg, ${BORDER} 0deg)`,
+            background: `conic-gradient(${scoreColor(totalPct)} ${totalPct * 3.6}deg, ${BORDER_COLOR} 0deg)`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1445,37 +1457,37 @@ function StepAudit({ onNext, onBack }) {
         >
           <div
             style={{
-              width: 38,
-              height: 38,
+              width: 42,
+              height: 42,
               borderRadius: "50%",
-              background: CARD,
+              background: CARD_BACKGROUND,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: 800,
-              color: WHITE,
+              color: TEXT_COLOR,
             }}
           >
             {totalPct}%
           </div>
         </div>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: WHITE }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: TEXT_COLOR }}>
             Overall Score
           </div>
-          <div style={{ fontSize: 13, color: MUTED }}>
+          <div style={{ fontSize: 14, color: MUTED_COLOR }}>
             {totalYes} of {totalQ} checks passed
           </div>
         </div>
         <div style={{ marginLeft: "auto" }}>
           <span
             style={{
-              padding: "4px 14px",
+              padding: "6px 16px",
               borderRadius: 999,
               background: `${scoreColor(totalPct)}20`,
               color: scoreColor(totalPct),
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: 700,
             }}
           >
@@ -1486,7 +1498,7 @@ function StepAudit({ onNext, onBack }) {
 
       {/* Stage tabs */}
       <div
-        style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}
+        style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}
       >
         {JOURNEY_STAGES.map((s, i) => {
           const sc = stageScore(s.id);
@@ -1495,24 +1507,26 @@ function StepAudit({ onNext, onBack }) {
               key={s.id}
               onClick={() => setActive(i)}
               style={{
-                padding: "7px 14px",
+                padding: "8px 16px",
                 borderRadius: 999,
-                border: `1px solid ${activeStage === i ? ORANGE : BORDER}`,
-                background: activeStage === i ? `${ORANGE}15` : "transparent",
-                color: activeStage === i ? ORANGE : MUTED,
-                fontSize: 12,
+                border: `1.5px solid ${activeStage === i ? PRIMARY_BLUE : BORDER_COLOR}`,
+                background: activeStage === i ? `${PRIMARY_BLUE}25` : "transparent",
+                color: activeStage === i ? PRIMARY_BLUE : MUTED_COLOR,
+                fontSize: 14,
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
-                gap: 6,
+                gap: 8,
                 transition: "all .2s",
+                fontWeight: activeStage === i ? 600 : 400,
               }}
             >
               {s.icon} {s.label}
               <span
                 style={{
-                  fontSize: 11,
+                  fontSize: 12,
                   color: scoreColor(sc.pct),
+                  fontWeight: 700,
                 }}
               >
                 {sc.yes}/{sc.total}
@@ -1525,26 +1539,26 @@ function StepAudit({ onNext, onBack }) {
       {/* Questions */}
       <div
         style={{
-          background: CARD,
-          border: `1px solid ${BORDER}`,
-          borderRadius: 14,
+          background: CARD_BACKGROUND,
+          border: `1px solid ${BORDER_COLOR}`,
+          borderRadius: 16,
           overflow: "hidden",
         }}
       >
         <div
-          style={{ padding: "16px 20px", borderBottom: `1px solid ${BORDER}` }}
+          style={{ padding: "18px 22px", borderBottom: `1px solid ${BORDER_COLOR}` }}
         >
           <div
             style={{
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: 700,
-              color: WHITE,
-              marginBottom: 2,
+              color: TEXT_COLOR,
+              marginBottom: 4,
             }}
           >
             {stage.icon} {stage.label} Stage
           </div>
-          <div style={{ fontSize: 13, color: MUTED }}>{stage.description}</div>
+          <div style={{ fontSize: 14, color: MUTED_COLOR, lineHeight: 1.5 }}>{stage.description}</div>
         </div>
 
         <div>
@@ -1558,43 +1572,43 @@ function StepAudit({ onNext, onBack }) {
                 style={{
                   display: "flex",
                   alignItems: "flex-start",
-                  gap: 14,
-                  padding: "16px 20px",
+                  gap: 16,
+                  padding: "18px 22px",
                   borderBottom:
                     i < stage.questions.length - 1
-                      ? `1px solid ${BORDER}`
+                      ? `1px solid ${BORDER_COLOR}`
                       : "none",
                   cursor: "pointer",
-                  background: checked ? `${ORANGE}08` : "transparent",
-                  transition: "background .15s",
+                  background: checked ? `${PRIMARY_BLUE}15` : "transparent",
+                  transition: "background .15s ease-in-out",
                 }}
               >
                 <div
                   style={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: 6,
+                    width: 24,
+                    height: 24,
+                    borderRadius: 8,
                     flexShrink: 0,
-                    marginTop: 1,
-                    border: `2px solid ${checked ? ORANGE : BORDER}`,
-                    background: checked ? ORANGE : "transparent",
+                    marginTop: 2,
+                    border: `2px solid ${checked ? PRIMARY_BLUE : BORDER_COLOR}`,
+                    background: checked ? PRIMARY_BLUE : "transparent",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: 12,
-                    color: "#000",
+                    fontSize: 14,
+                    color: "#FFFFFF",
                     fontWeight: 800,
-                    transition: "all .15s",
+                    transition: "all .15s ease-in-out",
                   }}
                 >
                   {checked ? "✓" : ""}
                 </div>
                 <span
                   style={{
-                    fontSize: 14,
-                    color: checked ? WHITE : "#aaa",
-                    lineHeight: 1.5,
-                    transition: "color .15s",
+                    fontSize: 15,
+                    color: checked ? TEXT_COLOR : MUTED_COLOR,
+                    lineHeight: 1.6,
+                    transition: "color .15s ease-in-out",
                   }}
                 >
                   {q}
@@ -1606,9 +1620,9 @@ function StepAudit({ onNext, onBack }) {
 
         <div
           style={{
-            padding: "14px 20px",
-            borderTop: `1px solid ${BORDER}`,
-            background: "#0d0d0d",
+            padding: "16px 22px",
+            borderTop: `1px solid ${BORDER_COLOR}`,
+            background: "#1C1C1E",
           }}
         >
           <div
@@ -1618,15 +1632,15 @@ function StepAudit({ onNext, onBack }) {
               alignItems: "center",
             }}
           >
-            <span style={{ fontSize: 13, color: MUTED }}>
+            <span style={{ fontSize: 14, color: MUTED_COLOR, fontWeight: 500 }}>
               {stage.label} Score: {sc.yes}/{sc.total} ({sc.pct}%)
             </span>
             <span
               style={{
-                fontSize: 12,
-                padding: "3px 12px",
+                fontSize: 13,
+                padding: "4px 14px",
                 borderRadius: 999,
-                background: `${scoreColor(sc.pct)}20`,
+                background: `${scoreColor(sc.pct)}25`,
                 color: scoreColor(sc.pct),
                 fontWeight: 700,
               }}
@@ -1636,10 +1650,11 @@ function StepAudit({ onNext, onBack }) {
           </div>
           <div
             style={{
-              height: 4,
-              background: BORDER,
+              height: 6,
+              background: BORDER_COLOR,
               borderRadius: 999,
-              marginTop: 10,
+              marginTop: 12,
+              overflow: 'hidden',
             }}
           >
             <div
@@ -1648,7 +1663,7 @@ function StepAudit({ onNext, onBack }) {
                 borderRadius: 999,
                 width: `${sc.pct}%`,
                 background: scoreColor(sc.pct),
-                transition: "width .4s ease",
+                transition: "width .4s ease-in-out",
               }}
             />
           </div>
@@ -1656,30 +1671,30 @@ function StepAudit({ onNext, onBack }) {
       </div>
 
       {/* Nav */}
-      <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 8, marginTop: 20, flexWrap: "wrap" }}>
         {activeStage > 0 && (
-          <OrangeBtn secondary onClick={() => setActive((a) => a - 1)}>
+          <GradientButton secondary onClick={() => setActive((a) => a - 1)}>
             ← Prev Stage
-          </OrangeBtn>
+          </GradientButton>
         )}
         {activeStage < JOURNEY_STAGES.length - 1 && (
-          <OrangeBtn onClick={() => setActive((a) => a + 1)}>
+          <GradientButton onClick={() => setActive((a) => a + 1)}>
             Next Stage →
-          </OrangeBtn>
+          </GradientButton>
         )}
       </div>
 
-      <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
-        <OrangeBtn secondary onClick={onBack}>
+      <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
+        <GradientButton secondary onClick={onBack}>
           ← Back
-        </OrangeBtn>
-        <OrangeBtn
+        </GradientButton>
+        <GradientButton
           fullWidth
           disabled={!answeredAll}
           onClick={() => onNext(answers)}
         >
           See My Results →
-        </OrangeBtn>
+        </GradientButton>
       </div>
     </div>
   );
@@ -1862,7 +1877,7 @@ Write a personalised insight report based on their weakest stage and the URLs pr
       const failed = s.questions.filter((_, i) => !answers[`${s.id}_${i}`]);
       return `
         <div style="margin-bottom:24px;">
-          <h3 style="color:#FF6B35;margin:0 0 12px;font-size:15px;">${s.icon} ${s.label} Stage</h3>
+          <h3 style="color:${PRIMARY_BLUE};margin:0 0 12px;font-size:15px;">${s.icon} ${s.label} Stage</h3>
           ${passed.map((q) => `<div style="padding:8px 12px;margin-bottom:6px;background:#1a1a1a;border-radius:8px;border-left:3px solid #22c55e;color:#ccc;font-size:13px;">✓ ${q}</div>`).join("")}
           ${failed.map((q) => `<div style="padding:8px 12px;margin-bottom:6px;background:#1a1a1a;border-radius:8px;border-left:3px solid #ef4444;color:#777;font-size:13px;">✗ ${q}</div>`).join("")}
         </div>
@@ -1873,7 +1888,7 @@ Write a personalised insight report based on their weakest stage and the URLs pr
       .map(
         (p) => `
       <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:16px;margin-bottom:12px;">
-        <div style="color:#FF6B35;font-weight:700;font-size:16px;margin-bottom:2px;">
+        <div style="color:${PRIMARY_BLUE};font-weight:700;font-size:16px;margin-bottom:2px;">
           ${p.name} <span style="color:#555;font-size:14px;font-weight:500;">— ${p.archetype}</span>
         </div>
         <div style="font-size:13px;color:#aaa;">${p.age} · ${p.role}</div>
@@ -1904,7 +1919,7 @@ Write a personalised insight report based on their weakest stage and the URLs pr
               <div style="margin-bottom:4px;"><strong style="color:#fff;">Behaviour:</strong> ${step.behaviour}</div>
               <div style="margin-bottom:4px;"><strong style="color:#fff;">Pain Point:</strong> ${step.painPoint}</div>
               <div style="margin-bottom:4px;"><strong style="color:#fff;">Touchpoints:</strong> ${step.touchpoint}</div>
-              <div style="margin-top:8px;color:#FF6B35;font-weight:600;">💡 Insight: ${step.insight}</div>
+              <div style="margin-top:8px;color:${PRIMARY_BLUE};font-weight:600;">💡 Insight: ${step.insight}</div>
             </div>
           </div>
         `;
@@ -1937,7 +1952,7 @@ Write a personalised insight report based on their weakest stage and the URLs pr
 
             <!-- Header -->
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid #1e1e1e;">
-              <div style="width:40px;height:40px;border-radius:10px;background:#FF6B35;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#000;">H</div>
+              <div style="width:40px;height:40px;border-radius:10px;background:${PRIMARY_BLUE};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#000;">H</div>
               <div>
                 <div style="font-size:16px;font-weight:700;color:#f5f5f5;">PeoplePlex</div>
                 <div style="font-size:12px;color:#555;">peopleplex.in · Understand Your Customers</div>
@@ -1950,7 +1965,7 @@ Write a personalised insight report based on their weakest stage and the URLs pr
 
             <!-- Title -->
             <div style="margin-bottom:32px;">
-              <div style="font-size:12px;color:#FF6B35;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;">Customer Journey Audit Report</div>
+              <div style="font-size:12px;color:${PRIMARY_BLUE};letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;">Customer Journey Audit Report</div>
               <h1 style="font-size:28px;font-weight:900;color:#f5f5f5;line-height:1.2;margin-bottom:8px;">
                 Customer Journey — How Well Is Your Business Performing?
               </h1>
@@ -1959,15 +1974,15 @@ Write a personalised insight report based on their weakest stage and the URLs pr
 
             <!-- Business Info -->
             <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:20px;margin-bottom:24px;">
-              <div style="font-size:12px;color:#FF6B35;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Business Details & Links</div>
+              <div style="font-size:12px;color:${PRIMARY_BLUE};text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Business Details & Links</div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                 <div style="grid-column:1/-1;"><div style="font-size:11px;color:#555;margin-bottom:4px;">BUSINESS NAME</div><div style="color:#f5f5f5;font-size:14px;">${business.businessName || "Not provided"}</div></div>
                 <div><div style="font-size:11px;color:#555;margin-bottom:4px;">INDUSTRY</div><div style="color:#f5f5f5;font-size:14px;">${business.industry}</div></div>
                 <div><div style="font-size:11px;color:#555;margin-bottom:4px;">LOCATION</div><div style="color:#f5f5f5;font-size:14px;">${business.location}</div></div>
                 
-                ${business.websiteUrl ? `<div><div style="font-size:11px;color:#555;margin-bottom:4px;">WEBSITE</div><div style="font-size:14px;"><a href="${business.websiteUrl}" target="_blank" style="color:#FF6B35;text-decoration:none;">${business.websiteUrl}</a></div></div>` : ""}
-                ${business.gmbUrl ? `<div><div style="font-size:11px;color:#555;margin-bottom:4px;">GOOGLE GMB</div><div style="font-size:14px;"><a href="${business.gmbUrl}" target="_blank" style="color:#FF6B35;text-decoration:none;">View Maps</a></div></div>` : ""}
-                ${business.socialUrl ? `<div><div style="font-size:11px;color:#555;margin-bottom:4px;">SOCIAL MEDIA</div><div style="font-size:14px;"><a href="${business.socialUrl}" target="_blank" style="color:#FF6B35;text-decoration:none;">View Profile</a></div></div>` : ""}
+                ${business.websiteUrl ? `<div><div style="font-size:11px;color:#555;margin-bottom:4px;">WEBSITE</div><div style="font-size:14px;"><a href="${business.websiteUrl}" target="_blank" style="color:${PRIMARY_BLUE};text-decoration:none;">${business.websiteUrl}</a></div></div>` : ""}
+                ${business.gmbUrl ? `<div><div style="font-size:11px;color:#555;margin-bottom:4px;">GOOGLE GMB</div><div style="font-size:14px;"><a href="${business.gmbUrl}" target="_blank" style="color:${PRIMARY_BLUE};text-decoration:none;">View Maps</a></div></div>` : ""}
+                ${business.socialUrl ? `<div><div style="font-size:11px;color:#555;margin-bottom:4px;">SOCIAL MEDIA</div><div style="font-size:14px;"><a href="${business.socialUrl}" target="_blank" style="color:${PRIMARY_BLUE};text-decoration:none;">View Profile</a></div></div>` : ""}
 
                 ${business.additionalNotes ? `<div style="grid-column:1/-1;"><div style="font-size:11px;color:#555;margin-bottom:4px;">ADDITIONAL NOTES</div><div style="color:#f5f5f5;font-size:14px;line-height:1.5;">${business.additionalNotes}</div></div>` : ""}
                 <div style="grid-column:1/-1;"><div style="font-size:11px;color:#555;margin-bottom:4px;">CUSTOMER PERSONAS AUDITED</div><div style="color:#f5f5f5;font-size:14px;">${personas.map((p) => p.name).join(", ")}</div></div>
@@ -2008,21 +2023,21 @@ Write a personalised insight report based on their weakest stage and the URLs pr
         : typeof aiInsight === "string"
           ? `
               <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:24px;">
-                <div style="font-size:13px;font-weight:700;color:#FF6B35;margin-bottom:14px;">💡 Personalised Gap Analysis</div>
+                <div style="font-size:13px;font-weight:700;color:${PRIMARY_BLUE};margin-bottom:14px;">💡 Personalised Gap Analysis</div>
                 <p style="font-size:14px;color:#ccc;line-height:1.8;">${aiInsight.replace(/\n\n/g, '</p><p style="font-size:14px;color:#ccc;line-height:1.8;margin-top:12px;">')}</p>
               </div>`
           : `
               <div style="margin-bottom:24px;">
                 <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:16px;">
-                  <div style="font-size:13px;font-weight:700;color:#FF6B35;margin-bottom:10px;">🌐 Website & Online Presence Report</div>
+                  <div style="font-size:13px;font-weight:700;color:${PRIMARY_BLUE};margin-bottom:10px;">🌐 Website & Online Presence Report</div>
                   <p style="font-size:14px;color:#ccc;line-height:1.8;margin:0;">${aiInsight.websiteReport}</p>
                 </div>
                 <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:16px;">
-                  <div style="font-size:13px;font-weight:700;color:#FF6B35;margin-bottom:10px;">💡 Key Takeaways</div>
+                  <div style="font-size:13px;font-weight:700;color:${PRIMARY_BLUE};margin-bottom:10px;">💡 Key Takeaways</div>
                   <p style="font-size:14px;color:#ccc;line-height:1.8;margin:0;">${aiInsight.keyTakeaways}</p>
                 </div>
                 <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;">
-                  <div style="font-size:13px;font-weight:700;color:#FF6B35;margin-bottom:10px;">🚀 Next Priority Step</div>
+                  <div style="font-size:13px;font-weight:700;color:${PRIMARY_BLUE};margin-bottom:10px;">🚀 Next Priority Step</div>
                   <p style="font-size:14px;color:#ccc;line-height:1.8;margin:0;">${aiInsight.nextPriorityStep}</p>
                 </div>
               </div>`
@@ -2035,14 +2050,14 @@ Write a personalised insight report based on their weakest stage and the URLs pr
             </div>
 
             <!-- CTA -->
-            <div style="background:#FF6B3515;border:1px solid #FF6B3540;border-radius:14px;padding:28px;text-align:center;margin-bottom:24px;">
+            <div style="background:${PRIMARY_BLUE}15;border:1px solid ${PRIMARY_BLUE}40;border-radius:14px;padding:28px;text-align:center;margin-bottom:24px;">
               <div style="font-size:20px;font-weight:800;color:#f5f5f5;margin-bottom:8px;">Ready to Fix Your Biggest Gap?</div>
               <p style="font-size:14px;color:#777;margin-bottom:20px;line-height:1.6;">
                 Book a free 30-minute Enrollment System Audit Call.<br />
                 You bring this report. I bring the analysis.
               </p>
               <a href="${BOOKING_LINK}" style="
-      display:inline-block;padding:14px 28px;background:#FF6B35;
+      display:inline-block;padding:14px 28px;background:${PRIMARY_BLUE};
       color:#000;font-weight:700;border-radius:10px;text-decoration:none;font-size:15px;
     ">Book Audit Call →</a>
             </div>
@@ -2066,8 +2081,8 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                 Get a free, AI-generated Customer Journey Audit designed specifically for your industry. Find out exactly where you're losing money and the quickest way to fix it.
               </p>
               <a href="${window.location.origin}" style="
-      display:inline-block;padding:12px 24px;background:transparent;border:2px solid #FF6B35;
-      color:#FF6B35;font-weight:700;border-radius:10px;text-decoration:none;font-size:14px;
+      display:inline-block;padding:12px 24px;background:transparent;border:2px solid ${PRIMARY_BLUE};
+      color:${PRIMARY_BLUE};font-weight:700;border-radius:10px;text-decoration:none;font-size:14px;
     ">Take Audit For Your Business →</a>
               <div style="margin-top:24px;font-size:13px;color:#555;">
                 peopleplex.in · Powered by PeoplePlex
@@ -2120,39 +2135,41 @@ Write a personalised insight report based on their weakest stage and the URLs pr
       <div style={{ marginBottom: 24 }}>
         <div
           style={{
-            fontSize: 13,
-            color: ORANGE,
+            fontSize: 14,
+            color: PRIMARY_BLUE,
             letterSpacing: ".1em",
             textTransform: "uppercase",
             marginBottom: 8,
+            fontWeight: 600,
           }}
         >
           Your Completed Report
         </div>
-        <h2 style={{ fontSize: 26, fontWeight: 800, color: WHITE, margin: 0 }}>
+        <h2 style={{ fontSize: 28, fontWeight: 800, color: TEXT_COLOR, margin: 0 }}>
           Customer Journey Audit
         </h2>
-        <p style={{ color: MUTED, marginTop: 6, fontSize: 14 }}>
+        <p style={{ color: MUTED_COLOR, marginTop: 8, fontSize: 16 }}>
           Comprehensive analysis of your current business performance.
         </p>
       </div>
 
       <div
         style={{
-          background: CARD,
-          border: `1px solid ${BORDER} `,
+          background: CARD_BACKGROUND,
+          border: `1px solid ${BORDER_COLOR}`,
           borderRadius: 16,
-          padding: "20px 24px",
+          padding: "24px",
           marginBottom: 24,
         }}
       >
         <div
           style={{
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: 700,
-            color: MUTED,
+            color: MUTED_COLOR,
             textTransform: "uppercase",
-            marginBottom: 12,
+            marginBottom: 16,
+            letterSpacing: '.05em',
           }}
         >
           Input Overview
@@ -2161,21 +2178,21 @@ Write a personalised insight report based on their weakest stage and the URLs pr
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: 8,
-            fontSize: 14,
+            gap: 12,
+            fontSize: 15,
           }}
         >
           <div>
-            <span style={{ color: MUTED }}>Industry:</span> {business.industry}
+            <span style={{ color: MUTED_COLOR, fontWeight: 500 }}>Industry:</span> {business.industry}
           </div>
           <div>
-            <span style={{ color: MUTED }}>Location:</span> {business.location}
+            <span style={{ color: MUTED_COLOR, fontWeight: 500 }}>Location:</span> {business.location}
           </div>
           <div>
-            <span style={{ color: MUTED }}>Market Tier:</span>{" "}
+            <span style={{ color: MUTED_COLOR, fontWeight: 500 }}>Market Tier:</span>{" "}
             {business.pricingTier.label}
           </div>
-          <div style={{ marginTop: 4, color: "#ccc", lineHeight: 1.5 }}>
+          <div style={{ marginTop: 8, color: TEXT_COLOR, lineHeight: 1.6, fontStyle: 'italic' }}>
             "{business.description}"
           </div>
         </div>
@@ -2184,9 +2201,9 @@ Write a personalised insight report based on their weakest stage and the URLs pr
       <div style={{ marginBottom: 24 }}>
         <div
           style={{
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: 800,
-            color: WHITE,
+            color: TEXT_COLOR,
             marginBottom: 16,
           }}
         >
@@ -2197,29 +2214,29 @@ Write a personalised insight report based on their weakest stage and the URLs pr
             <div
               key={i}
               style={{
-                background: CARD,
-                border: `1px solid ${BORDER} `,
-                borderRadius: 12,
-                padding: 16,
+                background: CARD_BACKGROUND,
+                border: `1px solid ${BORDER_COLOR}`,
+                borderRadius: 14,
+                padding: 20,
               }}
             >
               <div
                 style={{
-                  color: ORANGE,
+                  color: PRIMARY_BLUE,
                   fontWeight: 700,
-                  fontSize: 16,
-                  marginBottom: 2,
+                  fontSize: 17,
+                  marginBottom: 4,
                 }}
               >
                 {p.name}{" "}
-                <span style={{ color: MUTED, fontSize: 14, fontWeight: 500 }}>
+                <span style={{ color: MUTED_COLOR, fontSize: 15, fontWeight: 500 }}>
                   — {p.archetype}
                 </span>
               </div>
-              <div style={{ fontSize: 13, color: "#aaa" }}>
+              <div style={{ fontSize: 14, color: "#aaa" }}>
                 {p.age} · {p.role}
               </div>
-              <div style={{ marginTop: 8, fontSize: 14, lineHeight: 1.5 }}>
+              <div style={{ marginTop: 10, fontSize: 15, lineHeight: 1.6 }}>
                 "{p.summary}"
               </div>
             </div>
@@ -2231,9 +2248,9 @@ Write a personalised insight report based on their weakest stage and the URLs pr
       <div style={{ marginBottom: 24 }}>
         <div
           style={{
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: 800,
-            color: WHITE,
+            color: TEXT_COLOR,
             marginBottom: 16,
           }}
         >
@@ -2243,26 +2260,26 @@ Write a personalised insight report based on their weakest stage and the URLs pr
           <div
             key={i}
             style={{
-              background: CARD,
-              border: `1px solid ${BORDER} `,
-              borderRadius: 12,
-              padding: 20,
+              background: CARD_BACKGROUND,
+              border: `1px solid ${BORDER_COLOR}`,
+              borderRadius: 16,
+              padding: 24,
               marginBottom: 16,
             }}
           >
             <div
               style={{
-                color: WHITE,
+                color: TEXT_COLOR,
                 fontWeight: 800,
-                fontSize: 16,
-                marginBottom: 14,
-                paddingBottom: 10,
-                borderBottom: `1px solid ${BORDER} `,
+                fontSize: 18,
+                marginBottom: 16,
+                paddingBottom: 12,
+                borderBottom: `1px solid ${BORDER_COLOR}`,
               }}
             >
               {p.name}'s Journey
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {p.journey &&
                 p.journey.map((step, idx) => {
                   const colors = {
@@ -2277,13 +2294,13 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                     <div
                       key={idx}
                       style={{
-                        paddingLeft: 12,
-                        borderLeft: `2px solid ${color} `,
+                        paddingLeft: 14,
+                        borderLeft: `2px solid ${color}`,
                       }}
                     >
                       <div
                         style={{
-                          fontSize: 13,
+                          fontSize: 14,
                           fontWeight: 800,
                           color: color,
                           textTransform: "uppercase",
@@ -2294,26 +2311,26 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                       </div>
                       <div
                         style={{
-                          fontSize: 14,
+                          fontSize: 15,
                           color: "#ccc",
-                          marginTop: 4,
-                          lineHeight: 1.4,
+                          marginTop: 6,
+                          lineHeight: 1.6,
                           paddingBottom: 12,
                         }}
                       >
-                        <div style={{ marginBottom: 4 }}>
+                        <div style={{ marginBottom: 6 }}>
                           <strong style={{ color: "#fff" }}>Intent:</strong>{" "}
                           {step.intent}
                         </div>
-                        <div style={{ marginBottom: 4 }}>
+                        <div style={{ marginBottom: 6 }}>
                           <strong style={{ color: "#fff" }}>Behaviour:</strong>{" "}
                           {step.behaviour}
                         </div>
-                        <div style={{ marginBottom: 4 }}>
+                        <div style={{ marginBottom: 6 }}>
                           <strong style={{ color: "#fff" }}>Pain Point:</strong>{" "}
                           {step.painPoint}
                         </div>
-                        <div style={{ marginBottom: 2 }}>
+                        <div style={{ marginBottom: 4 }}>
                           <strong style={{ color: "#fff" }}>
                             Touchpoints:
                           </strong>{" "}
@@ -2321,8 +2338,8 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                         </div>
                         <div
                           style={{
-                            marginTop: 6,
-                            color: ORANGE,
+                            marginTop: 8,
+                            color: PRIMARY_BLUE,
                             fontWeight: 600,
                           }}
                         >
@@ -2340,10 +2357,10 @@ Write a personalised insight report based on their weakest stage and the URLs pr
       {/* Big score */}
       <div
         style={{
-          background: CARD,
-          border: `1px solid ${BORDER} `,
-          borderRadius: 16,
-          padding: 24,
+          background: CARD_BACKGROUND,
+          border: `1px solid ${BORDER_COLOR}`,
+          borderRadius: 20,
+          padding: 28,
           marginBottom: 16,
           textAlign: "center",
         }}
@@ -2359,14 +2376,14 @@ Write a personalised insight report based on their weakest stage and the URLs pr
           {totalPct}%
         </div>
         <div
-          style={{ fontSize: 18, fontWeight: 700, color: WHITE, marginTop: 8 }}
+          style={{ fontSize: 20, fontWeight: 700, color: TEXT_COLOR, marginTop: 12 }}
         >
           {scoreLabel(totalPct)} — {totalYes}/{totalQ} checks passed
         </div>
-        <div style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>
-          Weakest: <span style={{ color: "#ef4444" }}>{weakest.label}</span>
+        <div style={{ fontSize: 14, color: MUTED_COLOR, marginTop: 6 }}>
+          Weakest: <span style={{ color: "#FF3B30", fontWeight: '600' }}>{weakest.label}</span>
           {" · "}
-          Strongest: <span style={{ color: "#22c55e" }}>{strongest.label}</span>
+          Strongest: <span style={{ color: "#34C759", fontWeight: '600' }}>{strongest.label}</span>
         </div>
       </div>
 
@@ -2376,32 +2393,33 @@ Write a personalised insight report based on their weakest stage and the URLs pr
           display: "flex",
           flexDirection: "column",
           gap: 10,
-          marginBottom: 20,
+          marginBottom: 24,
         }}
       >
         {stageScores.map((s) => (
           <div
             key={s.id}
             style={{
-              background: CARD,
-              border: `1px solid ${BORDER} `,
-              borderRadius: 12,
-              padding: "14px 18px",
+              background: CARD_BACKGROUND,
+              border: `1px solid ${BORDER_COLOR}`,
+              borderRadius: 14,
+              padding: "16px 20px",
             }}
           >
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
-                marginBottom: 8,
+                marginBottom: 10,
+                alignItems: 'center',
               }}
             >
-              <span style={{ fontSize: 14, fontWeight: 600, color: WHITE }}>
+              <span style={{ fontSize: 16, fontWeight: 600, color: TEXT_COLOR }}>
                 {s.icon} {s.label}
               </span>
               <span
                 style={{
-                  fontSize: 13,
+                  fontSize: 14,
                   color: scoreColor(s.pct),
                   fontWeight: 700,
                 }}
@@ -2409,14 +2427,14 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                 {s.yes}/{s.total} · {s.pct}%
               </span>
             </div>
-            <div style={{ height: 6, background: BORDER, borderRadius: 999 }}>
+            <div style={{ height: 8, background: BORDER_COLOR, borderRadius: 999, overflow: 'hidden' }}>
               <div
                 style={{
                   height: "100%",
                   borderRadius: 999,
-                  width: `${s.pct}% `,
-                  background: scoreColor(s.pct),
-                  transition: "width .6s ease",
+                  width: `${s.pct}%`,
+                  background: `linear-gradient(90deg, ${scoreColor(s.pct)}, ${scoreColor(s.pct)}99)`,
+                  transition: "width .6s ease-in-out",
                 }}
               />
             </div>
@@ -2440,17 +2458,17 @@ Write a personalised insight report based on their weakest stage and the URLs pr
             {typeof aiInsight === "string" ? (
               <div
                 style={{
-                  background: CARD,
-                  border: `1px solid ${BORDER}`,
+                  background: CARD_BACKGROUND,
+                  border: `1px solid ${BORDER_COLOR}`,
                   borderRadius: 16,
                   padding: 24,
                 }}
               >
                 <div
                   style={{
-                    fontSize: 15,
+                    fontSize: 16,
                     fontWeight: 700,
-                    color: ORANGE,
+                    color: PRIMARY_BLUE,
                     marginBottom: 14,
                   }}
                 >
@@ -2460,8 +2478,8 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                   <p
                     key={i}
                     style={{
-                      fontSize: 14,
-                      color: MUTED,
+                      fontSize: 15,
+                      color: MUTED_COLOR,
                       lineHeight: 1.8,
                       margin: i > 0 ? "12px 0 0" : 0,
                     }}
@@ -2474,17 +2492,17 @@ Write a personalised insight report based on their weakest stage and the URLs pr
               <>
                 <div
                   style={{
-                    background: CARD,
-                    border: `1px solid ${BORDER}`,
+                    background: CARD_BACKGROUND,
+                    border: `1px solid ${BORDER_COLOR}`,
                     borderRadius: 16,
                     padding: 24,
                   }}
                 >
                   <div
                     style={{
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: 700,
-                      color: ORANGE,
+                      color: PRIMARY_BLUE,
                       marginBottom: 10,
                     }}
                   >
@@ -2492,8 +2510,8 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                   </div>
                   <p
                     style={{
-                      fontSize: 14,
-                      color: MUTED,
+                      fontSize: 15,
+                      color: MUTED_COLOR,
                       lineHeight: 1.8,
                       margin: 0,
                     }}
@@ -2503,17 +2521,17 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                 </div>
                 <div
                   style={{
-                    background: CARD,
-                    border: `1px solid ${BORDER}`,
+                    background: CARD_BACKGROUND,
+                    border: `1px solid ${BORDER_COLOR}`,
                     borderRadius: 16,
                     padding: 24,
                   }}
                 >
                   <div
                     style={{
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: 700,
-                      color: ORANGE,
+                      color: PRIMARY_BLUE,
                       marginBottom: 10,
                     }}
                   >
@@ -2521,8 +2539,8 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                   </div>
                   <p
                     style={{
-                      fontSize: 14,
-                      color: MUTED,
+                      fontSize: 15,
+                      color: MUTED_COLOR,
                       lineHeight: 1.8,
                       margin: 0,
                     }}
@@ -2532,17 +2550,17 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                 </div>
                 <div
                   style={{
-                    background: CARD,
-                    border: `1px solid ${BORDER}`,
+                    background: CARD_BACKGROUND,
+                    border: `1px solid ${BORDER_COLOR}`,
                     borderRadius: 16,
                     padding: 24,
                   }}
                 >
                   <div
                     style={{
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: 700,
-                      color: ORANGE,
+                      color: PRIMARY_BLUE,
                       marginBottom: 10,
                     }}
                   >
@@ -2550,8 +2568,8 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                   </div>
                   <p
                     style={{
-                      fontSize: 14,
-                      color: MUTED,
+                      fontSize: 15,
+                      color: MUTED_COLOR,
                       lineHeight: 1.8,
                       margin: 0,
                     }}
@@ -2566,35 +2584,35 @@ Write a personalised insight report based on their weakest stage and the URLs pr
           {/* Report Actions */}
           <div
             style={{
-              background: CARD,
-              border: `1px solid ${BORDER} `,
+              background: CARD_BACKGROUND,
+              border: `1px solid ${BORDER_COLOR}`,
               borderRadius: 16,
-              padding: 20,
+              padding: 24,
               marginBottom: 16,
             }}
           >
             <div
               style={{
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: 700,
-                color: WHITE,
-                marginBottom: 6,
+                color: TEXT_COLOR,
+                marginBottom: 8,
               }}
             >
               📄 Your Full Report is Ready
             </div>
             <p
               style={{
-                fontSize: 13,
-                color: MUTED,
+                fontSize: 14,
+                color: MUTED_COLOR,
                 marginBottom: 16,
-                lineHeight: 1.5,
+                lineHeight: 1.6,
               }}
             >
               Includes your complete checklist, stage breakdown, and
               personalised insights. Save it or send it to your inbox.
             </p>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               {/* Download Button */}
               <button
                 onClick={handleShare}
@@ -2602,12 +2620,12 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                 style={{
                   flex: 1,
                   minWidth: 140,
-                  padding: "13px 18px",
-                  borderRadius: 10,
-                  border: `1.5px solid ${ORANGE} `,
+                  padding: "14px 20px",
+                  borderRadius: 12,
+                  border: `1.5px solid ${PRIMARY_BLUE}`,
                   background: "transparent",
-                  color: ORANGE,
-                  fontSize: 14,
+                  color: PRIMARY_BLUE,
+                  fontSize: 15,
                   fontWeight: 700,
                   cursor: downloading ? "not-allowed" : "pointer",
                   display: "flex",
@@ -2624,16 +2642,16 @@ Write a personalised insight report based on their weakest stage and the URLs pr
             {/* Instruction note */}
             <div
               style={{
-                marginTop: 12,
-                padding: "10px 14px",
-                background: "#F3F4F6",
-                borderRadius: 8,
-                fontSize: 12,
-                color: MUTED,
-                lineHeight: 1.5,
+                marginTop: 14,
+                padding: "12px 16px",
+                background: "#1C1C1E",
+                borderRadius: 10,
+                fontSize: 13,
+                color: MUTED_COLOR,
+                lineHeight: 1.6,
               }}
             >
-              💡 <strong style={{ color: WHITE }}>Share Report URL</strong>{" "}
+              💡 <strong style={{ color: TEXT_COLOR }}>Share Report URL</strong>{" "}
               generates a unique, public link you can instantly send to your
               team or stakeholders so they can view the full breakdown.
             </div>
@@ -2642,147 +2660,83 @@ Write a personalised insight report based on their weakest stage and the URLs pr
           {/* Dual CTA */}
           <div
             style={{
-              background: `${ORANGE} 10`,
-              border: `1px solid ${ORANGE} 40`,
-              borderRadius: 16,
-              padding: 24,
+              background: `${PRIMARY_BLUE}15`,
+              border: `1px solid ${PRIMARY_BLUE}40`,
+              borderRadius: 20,
+              padding: 28,
             }}
           >
             <div
               style={{
-                fontSize: 20,
+                fontSize: 22,
                 fontWeight: 800,
-                color: WHITE,
-                marginBottom: 6,
+                color: TEXT_COLOR,
+                marginBottom: 8,
               }}
             >
               Ready to Fix Your Biggest Gap?
             </div>
             <p
               style={{
-                fontSize: 14,
-                color: MUTED,
-                marginBottom: 20,
-                lineHeight: 1.6,
+                fontSize: 15,
+                color: MUTED_COLOR,
+                marginBottom: 24,
+                lineHeight: 1.7,
               }}
             >
               Your{" "}
-              <span style={{ color: "#ef4444", fontWeight: 700 }}>
+              <span style={{ color: "#FF3B30", fontWeight: 700 }}>
                 {weakest.label}
               </span>{" "}
               stage at{" "}
-              <strong style={{ color: "#ef4444" }}>{weakest.pct}%</strong> is
+              <strong style={{ color: "#FF3B30" }}>{weakest.pct}%</strong> is
               costing you customers right now. Book a call — you bring this
               report, I bring the analysis.
             </p>
 
             {/* TWO CTAs */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {/* View Automations */}
-              <button
+              <GradientButton
                 onClick={() => setShowAutomations(true)}
-                style={{
-                  width: "100%",
-                  padding: "15px 24px",
-                  borderRadius: 12,
-                  border: "none",
-                  background: ORANGE,
-                  color: "#000",
-                  fontSize: 15,
-                  fontWeight: 800,
-                  cursor: "pointer",
-                  transition: "all .2s",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                }}
               >
                 ⚙️ View Automation Recommendations
-              </button>
+              </GradientButton>
 
               {/* Primary: Schedule Call */}
-              <button
+              <GradientButton
+                secondary
                 onClick={() => window.open(BOOKING_LINK, "_blank")}
-                style={{
-                  width: "100%",
-                  padding: "15px 24px",
-                  borderRadius: 12,
-                  border: `1.5px solid ${ORANGE}`,
-                  background: "transparent",
-                  color: ORANGE,
-                  fontSize: 15,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  transition: "all .2s",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                  marginBottom: 16
-                }}
               >
                 📞 Book Free Audit Call →
-              </button>
+              </GradientButton>
 
               {/* Lead to Psychology Audit */}
-              <button
+              <GradientButton
                 onClick={onNavigatePsychology}
-                style={{
-                  width: "100%",
-                  padding: "15px 24px",
-                  borderRadius: 12,
-                  border: "none",
-                  background: "#8b5cf6",
-                  color: WHITE,
-                  fontSize: 15,
-                  fontWeight: 800,
-                  cursor: "pointer",
-                  transition: "all .2s",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                  marginBottom: 16
-                }}
               >
                 🧠 Launch Customer Psychology AI →
-              </button>
+              </GradientButton>
 
 
               {/* Secondary: Share Report */}
-              <button
+              <GradientButton
+                secondary
                 onClick={handleShare}
                 disabled={downloading}
-                style={{
-                  width: "100%",
-                  padding: "15px 24px",
-                  borderRadius: 12,
-                  border: `1.5px solid ${BORDER}`,
-                  background: "transparent",
-                  color: WHITE,
-                  fontSize: 15,
-                  fontWeight: 700,
-                  cursor: downloading ? "not-allowed" : "pointer",
-                  transition: "all .2s",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                }}
               >
                 {downloading ? "⏳ Generating..." : "🔗 Share Report URL"}
-              </button>
+              </GradientButton>
             </div>
 
-            <div style={{ marginTop: 16, textAlign: "center" }}>
+            <div style={{ marginTop: 20, textAlign: "center" }}>
               <button
                 onClick={onRestart}
                 style={{
                   background: "none",
                   border: "none",
-                  color: MUTED,
-                  fontSize: 13,
+                  color: MUTED_COLOR,
+                  fontSize: 14,
                   cursor: "pointer",
                   textDecoration: "underline",
                 }}
@@ -2798,1795 +2752,6 @@ Write a personalised insight report based on their weakest stage and the URLs pr
   );
 }
 
-// ══════════════════════════════════════════════════════════════
-// AUTOMATION TOOLS
-// ══════════════════════════════════════════════════════════════
-const AUTOMATION_TOOLS = [
-  {
-    stage: "Awareness",
-    title: "Content Creation & Distribution",
-    description:
-      "Automate the process of creating and distributing valuable content to attract potential customers.",
-    tools: [
-      {
-        name: "ChatGPT/Claude",
-        category: "AI Content Generation",
-        use: "Generate blog posts, social media captions, video scripts based on keywords and audience pain points.",
-      },
-      {
-        name: "Buffer/Hootsuite",
-        category: "Social Media Scheduling",
-        use: "Schedule posts across multiple platforms, ensuring consistent online presence without manual effort.",
-      },
-      {
-        name: "Zapier/Make.com",
-        category: "Workflow Automation",
-        use: "Automatically share new blog posts to social media, or distribute content to email subscribers.",
-      },
-      {
-        name: "Google Alerts",
-        category: "Monitoring",
-        use: "Track mentions of your brand, industry keywords, and competitors to inform content strategy.",
-      },
-    ],
-  },
-  {
-    stage: "Appeal",
-    title: "Lead Capture & Nurturing",
-    description:
-      "Automate the process of capturing visitor information and engaging them with relevant content to build interest.",
-    tools: [
-      {
-        name: "Leadpages/Unbounce",
-        category: "Landing Page Builders",
-        use: "Create high-converting landing pages with automated lead capture forms and thank-you pages.",
-      },
-      {
-        name: "ActiveCampaign/Mailchimp",
-        category: "Email Marketing Automation",
-        use: "Set up automated email sequences (welcome series, educational content) for new leads.",
-      },
-      {
-        name: "ManyChat/Chatfuel",
-        category: "Chatbot Marketing",
-        use: "Deploy chatbots on your website or social media to answer FAQs, qualify leads, and collect contact info 24/7.",
-      },
-      {
-        name: "Calendly/Acuity Scheduling",
-        category: "Appointment Scheduling",
-        use: "Allow prospects to book discovery calls directly, automating the scheduling process and sending reminders.",
-      },
-    ],
-  },
-  {
-    stage: "Consideration",
-    title: "Trust Building & Qualification",
-    description:
-      "Automate the display of social proof, answer common objections, and qualify leads efficiently.",
-    tools: [
-      {
-        name: "Trustpilot/Google My Business",
-        category: "Review Management",
-        use: "Automate requests for reviews from satisfied customers and display them prominently.",
-      },
-      {
-        name: "VideoAsk/Typeform",
-        category: "Interactive Forms/Surveys",
-        use: "Create interactive quizzes or surveys to understand customer needs and qualify their interest automatically.",
-      },
-      {
-        name: "CRM (e.g., HubSpot, Zoho CRM)",
-        category: "Lead Scoring & Management",
-        use: "Automatically score leads based on their engagement and demographic data, prioritizing high-value prospects.",
-      },
-      {
-        name: "Proof/Fomo",
-        category: "Social Proof Notifications",
-        use: "Display real-time notifications of recent purchases or sign-ups to build credibility and urgency.",
-      },
-    ],
-  },
-  {
-    stage: "Action",
-    title: "Sales & Onboarding Automation",
-    description:
-      "Streamline the final steps of the customer journey, from closing the sale to initial onboarding.",
-    tools: [
-      {
-        name: "Stripe/Razorpay",
-        category: "Payment Processing",
-        use: "Automate invoicing, payment collection, and subscription management.",
-      },
-      {
-        name: "DocuSign/PandaDoc",
-        category: "Document Automation",
-        use: "Automate contract generation, e-signatures, and document delivery for faster closing.",
-      },
-      {
-        name: "Slack/Microsoft Teams",
-        category: "Internal Communication",
-        use: "Automate notifications to your sales or onboarding team when a new lead converts or a payment is made.",
-      },
-      {
-        name: "Loom/Vidyard",
-        category: "Personalized Video",
-        use: "Record quick, personalized video messages for new customers to welcome them and guide them through initial steps.",
-      },
-    ],
-  },
-  {
-    stage: "Advocacy",
-    title: "Retention & Referral Automation",
-    description:
-      "Automate processes to keep customers engaged, happy, and turning them into brand advocates.",
-    tools: [
-      {
-        name: "Intercom/Gorgias",
-        category: "Customer Support & Engagement",
-        use: "Automate follow-up messages, satisfaction surveys, and proactive support to improve retention.",
-      },
-      {
-        name: "ReferralCandy/Ambassador",
-        category: "Referral Programs",
-        use: "Set up automated referral programs that reward existing customers for bringing in new business.",
-      },
-      {
-        name: "SurveyMonkey/Google Forms",
-        category: "Feedback Collection",
-        use: "Automate sending post-purchase or post-service surveys to gather valuable feedback.",
-      },
-      {
-        name: "LoyaltyLion/Smile.io",
-        category: "Loyalty Programs",
-        use: "Automate points, rewards, and exclusive offers for loyal customers to encourage repeat business.",
-      },
-    ],
-  },
-];
-
-function AutomationRecommendations({ audit, onBack }) {
-  const { stageScores } = audit;
-  const weakestStage = [...stageScores].sort((a, b) => a.pct - b.pct)[0];
-
-  return (
-    <div style={{ maxWidth: 800, margin: "0 auto", padding: "40px 24px" }}>
-      <button
-        onClick={onBack}
-        style={{
-          background: "none",
-          border: "none",
-          color: MUTED,
-          fontSize: 14,
-          cursor: "pointer",
-          marginBottom: 24,
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-        }}
-      >
-        ← Back to Audit Report
-      </button>
-
-      <h2
-        style={{
-          fontSize: 26,
-          fontWeight: 800,
-          color: WHITE,
-          margin: "0 0 12px",
-        }}
-      >
-        Automation Recommendations
-      </h2>
-      <p
-        style={{
-          color: MUTED,
-          fontSize: 15,
-          lineHeight: 1.6,
-          marginBottom: 32,
-        }}
-      >
-        Based on your audit, here are some automation tools and strategies to
-        boost your customer journey, especially focusing on your weakest areas.
-      </p>
-
-      {weakestStage && (
-        <div
-          style={{
-            background: `${ORANGE}10`,
-            border: `1px solid ${ORANGE}30`,
-            borderRadius: 10,
-            padding: "16px 20px",
-            marginBottom: 32,
-            fontSize: 14,
-            color: WHITE,
-            lineHeight: 1.5,
-          }}
-        >
-          💡 Your weakest stage is the{" "}
-          <strong style={{ color: ORANGE }}>{weakestStage.stage}</strong> stage
-          ({weakestStage.pct}%). Prioritizing automation here will likely yield
-          the biggest impact.
-        </div>
-      )}
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
-        {AUTOMATION_TOOLS.map((section, idx) => (
-          <div key={idx}>
-            <h3
-              style={{
-                fontSize: 20,
-                fontWeight: 800,
-                color: WHITE,
-                marginBottom: 8,
-              }}
-            >
-              {section.stage} Stage: {section.title}
-            </h3>
-            <p
-              style={{
-                fontSize: 14,
-                color: MUTED,
-                marginBottom: 20,
-                lineHeight: 1.6,
-              }}
-            >
-              {section.description}
-            </p>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {section.tools.map((tool, toolIdx) => (
-                <div
-                  key={toolIdx}
-                  style={{
-                    background: CARD,
-                    border: `1px solid ${BORDER}`,
-                    borderRadius: 12,
-                    padding: "16px 20px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      marginBottom: 6,
-                    }}
-                  >
-                    <span
-                      style={{ fontSize: 16, fontWeight: 700, color: WHITE }}
-                    >
-                      {tool.name}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        padding: "3px 8px",
-                        borderRadius: 999,
-                        background: `${ORANGE}20`,
-                        color: ORANGE,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {tool.category}
-                    </span>
-                  </div>
-                  <p style={{ fontSize: 13, color: "#aaa", lineHeight: 1.5 }}>
-                    <strong style={{ color: WHITE }}>Use Case:</strong>{" "}
-                    {tool.use}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ marginTop: 40, textAlign: "center" }}>
-        <button
-          onClick={onBack}
-          style={{
-            padding: "14px 24px",
-            borderRadius: 12,
-            border: `1.5px solid ${BORDER}`,
-            background: "transparent",
-            color: WHITE,
-            fontSize: 15,
-            fontWeight: 700,
-            cursor: "pointer",
-            transition: "all .2s",
-          }}
-        >
-          ← Back to Audit Report
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════
-// AUTHENTICATION SCREEN
-// ══════════════════════════════════════════════════════════════
-function getFriendlyErrorMessage(err) {
-  if (!err || !err.code) return err?.message || "An unknown error occurred.";
-  switch (err.code) {
-    case "auth/invalid-credential":
-      return "Incorrect email or password. Please try again.";
-    case "auth/user-not-found":
-      return "No account registered with this email address.";
-    case "auth/wrong-password":
-      return "Wrong password. Please try again or reset it.";
-    case "auth/email-already-in-use":
-      return "An account with this email already exists.";
-    case "auth/weak-password":
-      return "Please choose a stronger password (at least 6 characters).";
-    case "auth/too-many-requests":
-      return "Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.";
-    case "auth/invalid-email":
-      return "Please enter a valid email address.";
-    default:
-      return err.message;
-  }
-}
-
-function AuthScreen() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [resetSent, setResetSent] = useState(false);
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      let userDetails;
-      if (isLogin) {
-        const userCred = await signInWithEmailAndPassword(
-          auth,
-          email,
-          password,
-        );
-        userDetails = userCred.user;
-      } else {
-        const userCred = await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password,
-        );
-        userDetails = userCred.user;
-
-        // Send email verification on first signup
-        await sendEmailVerification(userDetails);
-        alert(
-          "A verification link has been sent to your email. Please verify to fully secure your account.",
-        );
-      }
-
-      // Ensure user profile document exists in Firestore database
-      await setDoc(
-        doc(db, "users", userDetails.uid),
-        {
-          email: userDetails.email,
-          lastLoginAt: new Date().toISOString(),
-        },
-        { merge: true },
-      );
-    } catch (err) {
-      setError(getFriendlyErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleGoogleLogin() {
-    setLoading(true);
-    setError(null);
-    try {
-      const provider = new GoogleAuthProvider();
-      const userCred = await signInWithPopup(auth, provider);
-
-      // Ensure user profile document exists in Firestore database
-      await setDoc(
-        doc(db, "users", userCred.user.uid),
-        {
-          email: userCred.user.email,
-          displayName: userCred.user.displayName,
-          lastLoginAt: new Date().toISOString(),
-        },
-        { merge: true },
-      );
-    } catch (err) {
-      setError(getFriendlyErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: DARK,
-        color: WHITE,
-        fontFamily: "'DM Sans', sans-serif",
-      }}
-    >
-      <div
-        style={{
-          background: CARD,
-          border: `1px solid ${BORDER} `,
-          padding: 40,
-          borderRadius: 16,
-          width: "100%",
-          maxWidth: 400,
-        }}
-      >
-        <h2
-          style={{
-            fontSize: 24,
-            fontWeight: 800,
-            textAlign: "center",
-            marginBottom: 8,
-          }}
-        >
-          {isForgotPassword
-            ? "Reset Password"
-            : isLogin
-              ? "Welcome Back"
-              : "Create Account"}
-        </h2>
-        <p
-          style={{
-            color: MUTED,
-            textAlign: "center",
-            fontSize: 14,
-            marginBottom: 24,
-          }}
-        >
-          {isForgotPassword
-            ? "Enter your email to receive a password reset link."
-            : isLogin
-              ? "Log in to view your audits."
-              : "Sign up to start saving your audits."}
-        </p>
-
-        {resetSent && (
-          <div
-            style={{
-              background: "#22c55e20",
-              color: "#22c55e",
-              padding: "10px",
-              borderRadius: 8,
-              fontSize: 13,
-              marginBottom: 16,
-              textAlign: "center",
-            }}
-          >
-            If a native account exists with this email, a reset link was sent! (Check your spam).<br /><br />
-            <i>Note: If you usually click "Continue with Google", you do not have a password to reset! Please log in with Google instead.</i>
-          </div>
-        )}
-
-        {error && (
-          <div
-            style={{
-              background: "#ef444420",
-              color: "#ef4444",
-              padding: "10px",
-              borderRadius: 8,
-              fontSize: 13,
-              marginBottom: 16,
-            }}
-          >
-            {error}
-          </div>
-        )}
-
-        <form
-          onSubmit={handleSubmit}
-          style={{ display: "flex", flexDirection: "column", gap: 16 }}
-        >
-          <div>
-            <label
-              style={{
-                display: "block",
-                fontSize: 12,
-                fontWeight: 700,
-                color: MUTED,
-                marginBottom: 6,
-              }}
-            >
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{
-                width: "100%",
-                padding: "12px 16px",
-                borderRadius: 10,
-                border: `1px solid ${BORDER} `,
-                background: DARK,
-                color: WHITE,
-                fontSize: 15,
-              }}
-            />
-          </div>
-          {!isForgotPassword && (
-            <div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 6,
-                }}
-              >
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: MUTED,
-                  }}
-                >
-                  Password
-                </label>
-              </div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  borderRadius: 10,
-                  border: `1px solid ${BORDER} `,
-                  background: DARK,
-                  color: WHITE,
-                  fontSize: 15,
-                }}
-              />
-            </div>
-          )}
-          {isForgotPassword ? (
-            <button
-              type="button"
-              onClick={async () => {
-                if (!email.trim()) {
-                  setError("Please enter your email address first.");
-                  return;
-                }
-                setLoading(true);
-                setError(null);
-                try {
-                  await sendPasswordResetEmail(auth, email);
-                  setResetSent(true);
-                } catch (err) {
-                  setError(getFriendlyErrorMessage(err));
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              disabled={loading}
-              style={{
-                marginTop: 8,
-                width: "100%",
-                padding: "14px",
-                borderRadius: 10,
-                border: "none",
-                background: ORANGE,
-                color: "#000",
-                fontWeight: 700,
-                fontSize: 15,
-                cursor: loading ? "wait" : "pointer",
-                transition: "all .2s",
-              }}
-            >
-              {loading ? "Sending..." : "Send Reset Link"}
-            </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                marginTop: 8,
-                width: "100%",
-                padding: "14px",
-                borderRadius: 10,
-                border: "none",
-                background: ORANGE,
-                color: "#000",
-                fontWeight: 700,
-                fontSize: 15,
-                cursor: loading ? "wait" : "pointer",
-                transition: "all .2s",
-              }}
-            >
-              {loading ? "Please wait..." : isLogin ? "Log In" : "Sign Up"}
-            </button>
-          )}
-
-          {isLogin && !isForgotPassword && (
-            <div
-              onClick={() => {
-                setIsForgotPassword(true);
-                setError(null);
-                setResetSent(false);
-              }}
-              style={{
-                fontSize: 12,
-                color: ORANGE,
-                textAlign: "center",
-                cursor: "pointer",
-                fontWeight: 700,
-                marginTop: 8,
-              }}
-            >
-              Forgot your password?
-            </div>
-          )}
-
-          {isForgotPassword && (
-            <div
-              onClick={() => {
-                setIsForgotPassword(false);
-                setError(null);
-                setResetSent(false);
-              }}
-              style={{
-                fontSize: 12,
-                color: MUTED,
-                textAlign: "center",
-                cursor: "pointer",
-                marginTop: 8,
-              }}
-            >
-              ← Back to Login
-            </div>
-          )}
-        </form>
-
-        {!isForgotPassword && (
-          <>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                margin: "20px 0",
-              }}
-            >
-              <div style={{ flex: 1, height: 1, background: BORDER }} />
-              <span
-                style={{
-                  margin: "0 10px",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: MUTED,
-                }}
-              >
-                OR
-              </span>
-              <div style={{ flex: 1, height: 1, background: BORDER }} />
-            </div>
-
-            <button
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              style={{
-                width: "100%",
-                padding: "14px",
-                borderRadius: 10,
-                border: `1px solid ${BORDER} `,
-                background: CARD,
-                color: WHITE,
-                fontWeight: 700,
-                fontSize: 15,
-                cursor: loading ? "wait" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 10,
-                transition: "all .2s",
-              }}
-            >
-              <img
-                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                width="20"
-                alt="Google"
-              />
-              Continue with Google
-            </button>
-          </>
-        )}
-
-        <p
-          style={{
-            textAlign: "center",
-            fontSize: 13,
-            color: MUTED,
-            marginTop: 24,
-          }}
-        >
-          {isForgotPassword ? (
-            <></>
-          ) : (
-            <>
-              {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-              <span
-                onClick={() => setIsLogin(!isLogin)}
-                style={{ color: ORANGE, cursor: "pointer", fontWeight: 700 }}
-              >
-                {isLogin ? "Sign Up" : "Log In"}
-              </span>
-            </>
-          )}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════
-// USER DASHBOARD — Audit History
-// ══════════════════════════════════════════════════════════════
-function UserDashboard({ onClose, onLoadAudit }) {
-  const [leads, setLeads] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState(null);
-  const [filter, setFilter] = useState("all");
-  const [viewingAutomations, setViewingAutomations] = useState(null);
-
-  useEffect(() => {
-    loadLeads();
-  }, []);
-
-  async function loadLeads() {
-    setLoading(true);
-    if (!auth.currentUser) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const snapshot = await getDocs(
-        collection(db, "users", auth.currentUser.uid, "audits"),
-      );
-      const loaded = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        // Only load finished audits that have an overall score
-        if (data.overallScore) {
-          loaded.push({ id: doc.id, ...data });
-        }
-      });
-      loaded.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
-      setLeads(loaded);
-    } catch (e) {
-      console.error("Failed to fetch user audits:", e);
-      setLeads([]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function clearAllLeads() {
-    if (
-      !window.confirm(
-        "Are you sure you want to delete all past audits? (Coming soon - mock clear)",
-      )
-    )
-      return;
-    // In production we would wipe the Firestore collection, but for now just clear local state
-    setLeads([]);
-  }
-
-  function exportCSV() {
-    const headers = [
-      "Name",
-      "Email",
-      "Phone",
-      "Industry",
-      "Location",
-      "Tier",
-      "Persona",
-      "Score",
-      "Weakest",
-      "Strongest",
-      "Date",
-    ];
-    const rows = leads.map((l) => [
-      l.name,
-      l.email,
-      l.phone,
-      l.industry,
-      l.location,
-      l.pricingTier,
-      l.personaName,
-      l.overallScore + "%",
-      l.weakestStage,
-      l.strongestStage,
-      new Date(l.completedAt).toLocaleDateString("en-IN"),
-    ]);
-    const csv = [headers, ...rows]
-      .map((r) => r.map((v) => `"${v}"`).join(","))
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `leads - ${Date.now()}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  function notifyOnWhatsApp(lead) {
-    const YOUR_WHATSAPP = "919566812543"; // REPLACE with your number
-    const msg = encodeURIComponent(
-      `Hi ${lead.name}, I saw you completed the Customer Journey Audit on PeoplePlex.com.\n\n` +
-      `Your score was ${lead.overallScore}% — your biggest gap is the ${lead.weakestStage} stage.\n\n` +
-      `I have a specific idea for how to fix that.Are you free for a quick 15 - minute call this week ? `,
-    );
-    window.open(
-      `https://wa.me/${lead.phone.replace(/[^0-9]/g, "")}?text=${msg}`,
-      "_blank",
-    );
-  }
-
-  const filteredLeads = leads.filter((l) => {
-    if (filter === "all") return true;
-    if (filter === "critical") return l.overallScore < 40;
-    if (filter === "developing")
-      return l.overallScore >= 40 && l.overallScore < 70;
-    if (filter === "strong") return l.overallScore >= 70;
-    return true;
-  });
-
-  // Stats
-  const avgScore = leads.length
-    ? Math.round(leads.reduce((a, l) => a + l.overallScore, 0) / leads.length)
-    : 0;
-  const critCount = leads.filter((l) => l.overallScore < 40).length;
-  const industries = [...new Set(leads.map((l) => l.industry))].length;
-  const weakStages = leads.reduce((acc, l) => {
-    acc[l.weakestStage] = (acc[l.weakestStage] || 0) + 1;
-    return acc;
-  }, {});
-  const topWeak = Object.entries(weakStages).sort((a, b) => b[1] - a[1])[0];
-
-  if (viewingAutomations) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: DARK,
-          color: WHITE,
-          fontFamily: "'DM Sans','Segoe UI',sans-serif",
-        }}
-      >
-        <div style={{ maxWidth: 800, margin: "0 auto", padding: "40px 24px" }}>
-          <AutomationRecommendations
-            audit={viewingAutomations}
-            onBack={() => setViewingAutomations(null)}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: DARK,
-        color: WHITE,
-        fontFamily: "'DM Sans','Segoe UI',sans-serif",
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          padding: "16px 24px",
-          borderBottom: `1px solid ${BORDER}`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              background: ORANGE,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 16,
-              fontWeight: 900,
-              color: "#FFFFFF",
-            }}
-          >
-            H
-          </div>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700 }}>
-              My History Dashboard
-            </div>
-            <div style={{ fontSize: 11, color: MUTED }}>
-              PeoplePlex User Profile
-            </div>
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            onClick={onClose}
-            style={{
-              padding: "8px 14px",
-              borderRadius: 8,
-              border: `1px solid ${BORDER}`,
-              background: "transparent",
-              color: MUTED,
-              fontSize: 12,
-              cursor: "pointer",
-            }}
-          >
-            ← Back to Tool
-          </button>
-        </div>
-      </div>
-
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px 20px" }}>
-        {/* Stats row */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4,1fr)",
-            gap: 12,
-            marginBottom: 24,
-          }}
-        >
-          {[
-            {
-              label: "Completed Audits",
-              value: leads.length,
-              icon: "👥",
-              color: ORANGE,
-            },
-            {
-              label: "Avg Score",
-              value: avgScore + "%",
-              icon: "📊",
-              color: scoreColor(avgScore),
-            },
-            {
-              label: "Critical (<40%)",
-              value: critCount,
-              icon: "🚨",
-              color: "#ef4444",
-            },
-            {
-              label: "Industries",
-              value: industries,
-              icon: "🏢",
-              color: "#3b82f6",
-            },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              style={{
-                background: CARD,
-                border: `1px solid ${BORDER}`,
-                borderRadius: 12,
-                padding: "16px",
-                textAlign: "center",
-              }}
-            >
-              <div style={{ fontSize: 22 }}>{stat.icon}</div>
-              <div
-                style={{
-                  fontSize: 26,
-                  fontWeight: 900,
-                  color: stat.color,
-                  lineHeight: 1.1,
-                  marginTop: 4,
-                }}
-              >
-                {stat.value}
-              </div>
-              <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>
-                {stat.label}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Top insight bar */}
-        {topWeak && (
-          <div
-            style={{
-              background: `${ORANGE}10`,
-              border: `1px solid ${ORANGE}30`,
-              borderRadius: 10,
-              padding: "12px 16px",
-              marginBottom: 20,
-              fontSize: 13,
-              color: "#ccc",
-            }}
-          >
-            💡 <strong style={{ color: ORANGE }}>Pattern detected:</strong> Most
-            of your audits are weakest at the{" "}
-            <strong style={{ color: WHITE }}>{topWeak[0]}</strong> stage (
-            {topWeak[1]} of {leads.length} audits). Consider focusing on this
-            area.
-          </div>
-        )}
-
-        {/* Filter pills */}
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            marginBottom: 16,
-            flexWrap: "wrap",
-          }}
-        >
-          {[
-            ["all", "All My Audits", leads.length],
-            [
-              "critical",
-              "🚨 Critical (<40%)",
-              leads.filter((l) => l.overallScore < 40).length,
-            ],
-            [
-              "developing",
-              "🟡 Developing (40–70%)",
-              leads.filter((l) => l.overallScore >= 40 && l.overallScore < 70)
-                .length,
-            ],
-            [
-              "strong",
-              "✅ Strong (70%+)",
-              leads.filter((l) => l.overallScore >= 70).length,
-            ],
-          ].map(([id, label, count]) => (
-            <button
-              key={id}
-              onClick={() => setFilter(id)}
-              style={{
-                padding: "7px 14px",
-                borderRadius: 999,
-                border: `1px solid ${filter === id ? ORANGE : BORDER}`,
-                background: filter === id ? `${ORANGE}15` : "transparent",
-                color: filter === id ? ORANGE : MUTED,
-                fontSize: 12,
-                cursor: "pointer",
-              }}
-            >
-              {label} ({count})
-            </button>
-          ))}
-        </div>
-
-        {/* Lead list */}
-        {loading ? (
-          <Spinner message="Loading leads…" />
-        ) : filteredLeads.length === 0 ? (
-          <div
-            style={{ textAlign: "center", padding: "60px 20px", color: MUTED }}
-          >
-            <div style={{ fontSize: 40, marginBottom: 12 }}>📭</div>
-            <div
-              style={{
-                fontSize: 16,
-                fontWeight: 700,
-                color: WHITE,
-                marginBottom: 8,
-              }}
-            >
-              No audits yet
-            </div>
-            <div style={{ fontSize: 14 }}>
-              Complete your first Customer Journey Audit to see it here!
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {filteredLeads.map((lead) => (
-              <div
-                key={lead.id}
-                style={{
-                  background: CARD,
-                  border: `1px solid ${selected?.id === lead.id ? ORANGE : BORDER}`,
-                  borderRadius: 14,
-                  overflow: "hidden",
-                  transition: "border-color .2s",
-                }}
-              >
-                {/* Lead summary row */}
-                <div
-                  onClick={() =>
-                    setSelected(selected?.id === lead.id ? null : lead)
-                  }
-                  style={{
-                    padding: "16px 20px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 14,
-                  }}
-                >
-                  {/* Score circle */}
-                  <div
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: "50%",
-                      background: `conic-gradient(${scoreColor(lead.overallScore)} ${lead.overallScore * 3.6}deg, ${BORDER} 0deg)`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                      position: "relative",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: "50%",
-                        background: CARD,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 11,
-                        fontWeight: 800,
-                        color: scoreColor(lead.overallScore),
-                      }}
-                    >
-                      {lead.overallScore}%
-                    </div>
-                  </div>
-                  {/* Info */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <span
-                        style={{ fontSize: 15, fontWeight: 700, color: WHITE }}
-                      >
-                        {lead.businessName || lead.industry}
-                        {lead.personaName && lead.personaName !== "Unknown"
-                          ? ` — ${lead.personaName}`
-                          : ""}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 11,
-                          padding: "2px 8px",
-                          borderRadius: 999,
-                          background: `${scoreColor(lead.overallScore)}20`,
-                          color: scoreColor(lead.overallScore),
-                          fontWeight: 600,
-                        }}
-                      >
-                        {scoreLabel(lead.overallScore)}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
-                      {lead.industry} · {lead.location} · {lead.pricingTier}
-                    </div>
-                    <div style={{ fontSize: 12, color: "#555", marginTop: 1 }}>
-                      Weakest:{" "}
-                      <span style={{ color: "#ef4444" }}>
-                        {lead.weakestStage}
-                      </span>{" "}
-                      ·{" "}
-                      {new Date(lead.completedAt).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Expanded detail */}
-                {selected?.id === lead.id && (
-                  <div
-                    style={{
-                      borderTop: `1px solid ${BORDER}`,
-                      padding: "16px 20px",
-                      background: "#F3F4F6",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: 8,
-                        marginBottom: 14,
-                      }}
-                    >
-                      {[
-                        {
-                          l: "Persona",
-                          v:
-                            lead.personaName && lead.personaName !== "Unknown"
-                              ? `${lead.personaName} — ${lead.personaArchetype}`
-                              : "Not generated",
-                        },
-                        { l: "Pricing Tier", v: lead.pricingTier },
-                      ].map((item) => (
-                        <div
-                          key={item.l}
-                          style={{
-                            background: CARD,
-                            borderRadius: 8,
-                            padding: "10px 12px",
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontSize: 10,
-                              color: MUTED,
-                              textTransform: "uppercase",
-                              marginBottom: 3,
-                            }}
-                          >
-                            {item.l}
-                          </div>
-                          <div style={{ fontSize: 13, color: WHITE }}>
-                            {item.v}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    {/* Stage breakdown */}
-                    <div
-                      style={{ fontSize: 12, color: MUTED, marginBottom: 8 }}
-                    >
-                      Stage Scores
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 6,
-                        flexWrap: "wrap",
-                        marginBottom: 16,
-                      }}
-                    >
-                      {(lead.stageScores || []).map((s) => (
-                        <div
-                          key={s.stage}
-                          style={{
-                            background: CARD,
-                            borderRadius: 8,
-                            padding: "8px 12px",
-                            fontSize: 12,
-                          }}
-                        >
-                          <span style={{ color: MUTED }}>{s.stage}: </span>
-                          <span
-                            style={{
-                              color: scoreColor(s.pct),
-                              fontWeight: 700,
-                            }}
-                          >
-                            {s.pct}%
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 8,
-                        flexWrap: "wrap",
-                        marginTop: 16,
-                      }}
-                    >
-                      {lead.business && (
-                        <>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onLoadAudit(lead, 4);
-                            }}
-                            style={{
-                              flex: 1,
-                              padding: "12px 16px",
-                              borderRadius: 10,
-                              background: "transparent",
-                              color: WHITE,
-                              border: `1.5px solid ${BORDER}`,
-                              fontWeight: 700,
-                              fontSize: 13,
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            📄 View Full Report
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onLoadAudit(lead, 3);
-                            }}
-                            style={{
-                              flex: 1,
-                              padding: "12px 16px",
-                              borderRadius: 10,
-                              background: "transparent",
-                              color: WHITE,
-                              border: `1.5px solid ${BORDER}`,
-                              fontWeight: 700,
-                              fontSize: 13,
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            🔄 Retake Audit
-                          </button>
-                        </>
-                      )}
-
-                      {/* Automation Plan Button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setViewingAutomations(lead);
-                        }}
-                        style={{
-                          width: lead.business ? "100%" : "auto",
-                          flex: lead.business ? "none" : 1,
-                          padding: "12px 16px",
-                          borderRadius: 10,
-                          border: "none",
-                          background: ORANGE,
-                          color: "#FFFFFF",
-                          fontWeight: 800,
-                          fontSize: 13,
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: 8,
-                          transition: "opacity 0.2s",
-                        }}
-                      >
-                        ⚙️ View Automation Recommendations
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Danger zone */}
-        {leads.length > 0 && (
-          <div style={{ marginTop: 32, textAlign: "center" }}>
-            <button
-              onClick={clearAllLeads}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#444",
-                fontSize: 12,
-                cursor: "pointer",
-                textDecoration: "underline",
-              }}
-            >
-              Clear all audits
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════
-// USER PROFILE SETTINGS
-// ══════════════════════════════════════════════════════════════
-function UserProfileSettings({ user, onClose }) {
-  const [displayName, setDisplayName] = useState(user?.displayName || "");
-  const [email, setEmail] = useState(user?.email || "");
-  const [password, setPassword] = useState("");
-  const [whatsapp, setWhatsapp] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState({ text: "", type: "" });
-
-  useEffect(() => {
-    import("firebase/firestore").then(({ doc, getDoc }) => {
-      getDoc(doc(db, "users", user.uid))
-        .then((snap) => {
-          if (snap.exists() && snap.data().whatsapp) {
-            setWhatsapp(snap.data().whatsapp);
-          }
-        })
-        .catch((e) => console.error(e));
-    });
-  }, [user]);
-
-  async function handleSave(e) {
-    e.preventDefault();
-    setLoading(true);
-    setMsg({ text: "", type: "" });
-    try {
-      if (displayName !== user.displayName) {
-        await updateProfile(auth.currentUser, { displayName });
-      }
-      if (email !== user.email) {
-        await updateEmail(auth.currentUser, email);
-      }
-      if (password) {
-        await updatePassword(auth.currentUser, password);
-      }
-
-      const { doc: fsDoc, setDoc: fsSetDoc } =
-        await import("firebase/firestore");
-      await fsSetDoc(
-        fsDoc(db, "users", auth.currentUser.uid),
-        { whatsapp },
-        { merge: true },
-      );
-
-      setMsg({ text: "Profile updated successfully!", type: "success" });
-      setPassword("");
-    } catch (err) {
-      if (err.code === "auth/requires-recent-login") {
-        setMsg({
-          text: "Please sign out and sign back in to change sensitive information like email or password.",
-          type: "error",
-        });
-      } else {
-        setMsg({ text: err.message, type: "error" });
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: DARK,
-        color: WHITE,
-        fontFamily: "'DM Sans','Segoe UI',sans-serif",
-      }}
-    >
-      <div
-        style={{
-          padding: "16px 24px",
-          borderBottom: `1px solid ${BORDER}`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              background: ORANGE,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 16,
-              fontWeight: 900,
-              color: "#000",
-            }}
-          >
-            H
-          </div>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700 }}>
-              Profile Settings
-            </div>
-            <div style={{ fontSize: 11, color: MUTED }}>
-              Manage your PeoplePlex account
-            </div>
-          </div>
-        </div>
-        <div>
-          <button
-            onClick={onClose}
-            style={{
-              padding: "8px 14px",
-              borderRadius: 8,
-              border: `1px solid ${BORDER}`,
-              background: "transparent",
-              color: MUTED,
-              fontSize: 12,
-              cursor: "pointer",
-            }}
-          >
-            ← Back to Tool
-          </button>
-        </div>
-      </div>
-
-      <div style={{ maxWidth: 480, margin: "40px auto", padding: "0 20px" }}>
-        <div
-          style={{
-            background: CARD,
-            border: `1px solid ${BORDER}`,
-            padding: "32px",
-            borderRadius: 16,
-          }}
-        >
-          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 24 }}>
-            Account Settings
-          </h2>
-
-          {msg.text && (
-            <div
-              style={{
-                background: msg.type === "error" ? "#ef444420" : "#22c55e20",
-                color: msg.type === "error" ? "#ef4444" : "#22c55e",
-                padding: "12px",
-                borderRadius: 8,
-                fontSize: 13,
-                marginBottom: 24,
-                lineHeight: 1.4,
-              }}
-            >
-              {msg.text}
-            </div>
-          )}
-
-          <form
-            onSubmit={handleSave}
-            style={{ display: "flex", flexDirection: "column", gap: 16 }}
-          >
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: MUTED,
-                  marginBottom: 6,
-                }}
-              >
-                Display Name
-              </label>
-              <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Your name"
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  borderRadius: 10,
-                  border: `1px solid ${BORDER}`,
-                  background: DARK,
-                  color: WHITE,
-                  fontSize: 15,
-                }}
-              />
-            </div>
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: MUTED,
-                  marginBottom: 6,
-                }}
-              >
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  borderRadius: 10,
-                  border: `1px solid ${BORDER}`,
-                  background: DARK,
-                  color: WHITE,
-                  fontSize: 15,
-                }}
-              />
-            </div>
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: MUTED,
-                  marginBottom: 6,
-                }}
-              >
-                WhatsApp Number
-              </label>
-              <input
-                type="tel"
-                value={whatsapp}
-                onChange={(e) => setWhatsapp(e.target.value)}
-                placeholder="+91 98765 43210"
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  borderRadius: 10,
-                  border: `1px solid ${BORDER}`,
-                  background: DARK,
-                  color: WHITE,
-                  fontSize: 15,
-                }}
-              />
-            </div>
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: MUTED,
-                  marginBottom: 6,
-                }}
-              >
-                New Password (leave blank to keep current)
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  borderRadius: 10,
-                  border: `1px solid ${BORDER}`,
-                  background: DARK,
-                  color: WHITE,
-                  fontSize: 15,
-                }}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                marginTop: 16,
-                width: "100%",
-                padding: "14px",
-                borderRadius: 10,
-                border: "none",
-                background: ORANGE,
-                color: "#000",
-                fontWeight: 700,
-                fontSize: 15,
-                cursor: loading ? "wait" : "pointer",
-                transition: "all .2s",
-              }}
-            >
-              {loading ? "Saving..." : "Save Changes"}
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════
-// SHARED REPORT VIEW
-// ══════════════════════════════════════════════════════════════
-function SharedReportView({ reportId }) {
-  const [html, setHtml] = useState(null);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    import("firebase/firestore").then(({ doc, getDoc }) => {
-      getDoc(doc(db, "public_reports", reportId))
-        .then((snap) => {
-          if (snap.exists()) setHtml(snap.data().html);
-          else setError(true);
-        })
-        .catch(() => setError(true));
-    });
-  }, [reportId]);
-
-  if (error)
-    return (
-      <div
-        style={{
-          color: "#fff",
-          padding: 40,
-          textAlign: "center",
-          background: DARK,
-          minHeight: "100vh",
-        }}
-      >
-        <h2>Report Not Found</h2>
-        <p style={{ color: MUTED }}>
-          This report may have been deleted or never existed.
-        </p>
-        <button
-          onClick={() => (window.location.href = "/")}
-          style={{
-            marginTop: 20,
-            padding: "10px 16px",
-            background: ORANGE,
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer",
-            fontWeight: "bold",
-          }}
-        >
-          Start New Audit
-        </button>
-      </div>
-    );
-  if (!html)
-    return (
-      <div
-        style={{
-          background: DARK,
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Spinner message="Loading Shared Report..." />
-      </div>
-    );
-
-  return (
-    <iframe
-      srcDoc={html}
-      style={{
-        width: "100%",
-        height: "100vh",
-        border: "none",
-        background: "#fff",
-      }}
-      title="Shared Report"
-    />
-  );
-}
-
-// ══════════════════════════════════════════════════════════════
-// ROOT APP
-// ══════════════════════════════════════════════════════════════
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -4631,8 +2796,8 @@ export default function App() {
       <div
         style={{
           minHeight: "100vh",
-          background: DARK,
-          color: WHITE,
+          background: DARK_MODE_BACKGROUND,
+          color: TEXT_COLOR,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -4650,18 +2815,18 @@ export default function App() {
           display: flex;
           flex-direction: row;
           min-height: 100vh;
-          background: ${DARK};
-          font-family: 'DM Sans', 'Segoe UI', sans-serif;
-          color: ${WHITE};
+          background: ${DARK_MODE_BACKGROUND};
+          font-family: 'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Open Sans','Helvetica Neue',sans-serif;
+          color: ${TEXT_COLOR};
         }
         .side-nav {
           width: 260px;
-          border-right: 1px solid ${BORDER};
+          border-right: 1px solid ${BORDER_COLOR};
           display: flex;
           flex-direction: column;
           padding: 24px 16px;
           gap: 16px;
-          background: ${CARD};
+          background: ${CARD_BACKGROUND};
           position: sticky;
           top: 0;
           height: 100vh;
@@ -4687,16 +2852,16 @@ export default function App() {
           transition: all .2s;
         }
         .nav-btn.active {
-          background: ${CARD};
-          color: ${ORANGE};
+          background: ${PRIMARY_BLUE};
+          color: ${TEXT_COLOR};
         }
         .nav-btn.inactive {
           background: transparent;
-          color: ${MUTED};
+          color: ${MUTED_COLOR};
         }
         .nav-btn.inactive:hover {
-          background: rgba(0,0,0,0.04);
-          color: ${WHITE};
+          background: rgba(255,255,255,0.08);
+          color: ${TEXT_COLOR};
         }
         .nav-btn-icon {
           font-size: 20px;
@@ -4711,7 +2876,7 @@ export default function App() {
             height: 70px;
             flex-direction: row;
             border-right: none;
-            border-top: 1px solid ${BORDER};
+            border-top: 1px solid ${BORDER_COLOR};
             bottom: 0;
             top: auto;
             position: fixed;
@@ -4747,7 +2912,7 @@ export default function App() {
           style={{
             padding: "0 8px 16px",
             marginBottom: 16,
-            borderBottom: `1px solid ${BORDER}`,
+            borderBottom: `1px solid ${BORDER_COLOR}`,
             display: "flex",
             alignItems: "center",
             gap: 12,
@@ -4758,22 +2923,22 @@ export default function App() {
               width: 36,
               height: 36,
               borderRadius: 10,
-              background: ORANGE,
+              background: `linear-gradient(45deg, ${PRIMARY_BLUE}, #00AFFF)`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: 18,
               fontWeight: 900,
-              color: "#000",
+              color: "#FFFFFF",
             }}
           >
-            H
+            P
           </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: WHITE }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: TEXT_COLOR }}>
               PeoplePlex
             </div>
-            <div style={{ fontSize: 11, color: MUTED }}>Growth Tools</div>
+            <div style={{ fontSize: 11, color: MUTED_COLOR }}>Growth Tools</div>
           </div>
         </div>
 
@@ -4824,7 +2989,7 @@ export default function App() {
         <button
           className="nav-btn inactive"
           onClick={() => signOut(auth)}
-          style={{ color: "#ef4444" }}
+          style={{ color: "#FF3B30" }}
         >
           <span className="nav-btn-icon">🚪</span>
           <span>Sign Out</span>
@@ -4906,19 +3071,19 @@ export default function App() {
               {!business ? (
                 <div style={{ textAlign: "center", paddingTop: 80 }}>
                   <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-                  <h2 style={{ fontSize: 24, fontWeight: 800, color: WHITE, marginBottom: 16 }}>Project Not Setup</h2>
-                  <p style={{ color: MUTED, marginBottom: 32, fontSize: 16 }}>Please complete the Project Setup Wizard on the Dashboard to access this tool.</p>
-                  <button
+                  <h2 style={{ fontSize: 24, fontWeight: 800, color: TEXT_COLOR, marginBottom: 16 }}>Project Not Setup</h2>
+                  <p style={{ color: MUTED_COLOR, marginBottom: 32, fontSize: 16 }}>Please complete the Project Setup Wizard on the Dashboard to access this tool.</p>
+                  <GradientButton
                     onClick={() => navigate("/")}
-                    style={{ padding: "12px 24px", borderRadius: 12, border: "none", background: ORANGE, color: "#FFFFFF", fontWeight: 800, cursor: "pointer" }}
                   >
                     Go to Dashboard →
-                  </button>
+                  </GradientButton>
                 </div>
               ) : (
                 <>
-                  {step > 0 && <Steps current={step - 1} />}
+                  {step > 0 && <Steps current={step} />}
 
+                  {step === 0 && <StepDescribe onNext={(d) => { setBusiness(d); setStep(1); }} />}
                   {step === 1 && (
                     <StepPersonas
                       business={business}
@@ -4926,7 +3091,7 @@ export default function App() {
                         setPersonas(p);
                         setStep(2);
                       }}
-                      onBack={() => navigate("/")}
+                      onBack={() => setStep(0)}
                     />
                   )}
                   {step === 2 && (

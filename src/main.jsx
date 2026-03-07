@@ -1,12 +1,12 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import JourneyAudit from './JourneyAudit.jsx'
+import App from './JourneyAudit.jsx'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <JourneyAudit />
+      <App />
     </BrowserRouter>
   </React.StrictMode>
 )
