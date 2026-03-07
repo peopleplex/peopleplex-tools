@@ -1637,7 +1637,7 @@ function StepAudit({ onNext, onBack }) {
 // ══════════════════════════════════════════════════════════════
 // STEP 5 — Results
 // ══════════════════════════════════════════════════════════════
-function StepResults({ business, personas, answers, leadId, onRestart }) {
+function StepResults({ business, personas, answers, leadId, onRestart, onNavigatePsychology }) {
   const [aiInsight, setAiInsight] = useState(null);
   const [loadingAI, setLoadingAI] = useState(true);
   const [downloading, setDownloading] = useState(false);
@@ -2668,10 +2668,36 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 10,
+                  marginBottom: 16
                 }}
               >
                 📞 Book Free Audit Call →
               </button>
+
+              {/* Lead to Psychology Audit */}
+              <button
+                onClick={onNavigatePsychology}
+                style={{
+                  width: "100%",
+                  padding: "15px 24px",
+                  borderRadius: 12,
+                  border: "none",
+                  background: "#8b5cf6",
+                  color: WHITE,
+                  fontSize: 15,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  transition: "all .2s",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                  marginBottom: 16
+                }}
+              >
+                🧠 Launch Customer Psychology AI →
+              </button>
+
 
               {/* Secondary: Share Report */}
               <button
@@ -2715,8 +2741,9 @@ Write a personalised insight report based on their weakest stage and the URLs pr
             </div>
           </div>
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 }
 
@@ -4789,46 +4816,50 @@ export default function App() {
                 padding: "40px 20px 60px",
               }}
             >
-              <Steps current={step} />
+              {step > 0 && <Steps current={step - 1} />}
 
               {step === 0 && (
-                <StepDescribe
-                  onNext={(d) => {
-                    setBusiness(d);
-                    const newLeadId = `audit_${Date.now()}`;
-                    setLeadId(newLeadId);
-                    const auditData = {
-                      id: newLeadId,
-                      businessName: d.businessName,
-                      additionalNotes: d.additionalNotes,
-                      industry: d.industry,
-                      location: d.location,
-                      websiteUrl: d.websiteUrl || "",
-                      gmbUrl: d.gmbUrl || "",
-                      socialUrl: d.socialUrl || "",
-                      pricingTier: d.pricingTier?.label || "Unknown",
-                      completedAt: new Date().toISOString(),
-                      source: "PeoplePlex App",
-                    };
+                <div>
+                  <h1 style={{ fontSize: 32, fontWeight: 900, marginBottom: 8, color: WHITE, textAlign: "center" }}>Project Setup Wizard</h1>
+                  <p style={{ color: MUTED, marginBottom: 32, fontSize: 16, textAlign: "center" }}>Tell us about your client or business to initialize the AI Toolset.</p>
+                  <StepDescribe
+                    onNext={(d) => {
+                      setBusiness(d);
+                      const newLeadId = `audit_${Date.now()}`;
+                      setLeadId(newLeadId);
+                      const auditData = {
+                        id: newLeadId,
+                        businessName: d.businessName,
+                        additionalNotes: d.additionalNotes,
+                        industry: d.industry,
+                        location: d.location,
+                        websiteUrl: d.websiteUrl || "",
+                        gmbUrl: d.gmbUrl || "",
+                        socialUrl: d.socialUrl || "",
+                        pricingTier: d.pricingTier?.label || "Unknown",
+                        completedAt: new Date().toISOString(),
+                        source: "PeoplePlex App",
+                      };
 
-                    if (auth.currentUser) {
-                      setDoc(
-                        doc(
-                          db,
-                          "users",
-                          auth.currentUser.uid,
-                          "audits",
-                          newLeadId,
-                        ),
-                        auditData,
-                      ).catch((err) => {
-                        console.error("Firestore save error:", err);
-                      });
-                    }
+                      if (auth.currentUser) {
+                        setDoc(
+                          doc(
+                            db,
+                            "users",
+                            auth.currentUser.uid,
+                            "audits",
+                            newLeadId,
+                          ),
+                          auditData,
+                        ).catch((err) => {
+                          console.error("Firestore save error:", err);
+                        });
+                      }
 
-                    setStep(1);
-                  }}
-                />
+                      setStep(1);
+                    }}
+                  />
+                </div>
               )}
               {step === 1 && (
                 <StepPersonas
@@ -4867,6 +4898,7 @@ export default function App() {
                   answers={answers}
                   leadId={leadId}
                   onRestart={restart}
+                  onNavigatePsychology={() => navigate("/psychology")}
                 />
               )}
             </div>
