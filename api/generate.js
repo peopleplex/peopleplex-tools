@@ -69,8 +69,8 @@ export default async function handler(req, res) {
         return res.status(200).json(data);
       }
 
-    } 
-    
+    }
+
     // Fallback to other providers if Anthropic is not available or fails
     if (groqKey) {
       // ══════════════════════════════════════════════════════════
@@ -85,7 +85,7 @@ export default async function handler(req, res) {
           'Authorization': `Bearer ${groqKey}`,
         },
         body: JSON.stringify({
-          model: 'llama3-70b-8192',
+          model: 'llama-3.3-70b-versatile',
           messages: apiMessages,
           max_tokens: max_tokens,
           temperature: 0.7,
@@ -104,8 +104,8 @@ export default async function handler(req, res) {
         return res.status(200).json({ content: [{ type: 'text', text: resultText }] });
       }
 
-    } 
-    
+    }
+
     if (geminiKey) {
       // ══════════════════════════════════════════════════════════
       // GOOGLE GEMINI
@@ -132,14 +132,14 @@ export default async function handler(req, res) {
       } else {
         const data = JSON.parse(responseText);
         if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
-            // Fall through
+          // Fall through
         } else {
-            resultText = data.candidates[0].content.parts[0].text;
-            return res.status(200).json({ content: [{ type: 'text', text: resultText }] });
+          resultText = data.candidates[0].content.parts[0].text;
+          return res.status(200).json({ content: [{ type: 'text', text: resultText }] });
         }
       }
-    } 
-    
+    }
+
     if (openaiKey) {
       // ══════════════════════════════════════════════════════════
       // OPENAI GPT
@@ -170,8 +170,8 @@ export default async function handler(req, res) {
 
     // If all API calls fail
     return res.status(500).json({
-        error: 'All API providers failed',
-        message: 'Could not connect to any configured AI service. Please check your API keys and service status.',
+      error: 'All API providers failed',
+      message: 'Could not connect to any configured AI service. Please check your API keys and service status.',
     });
 
   } catch (error) {
