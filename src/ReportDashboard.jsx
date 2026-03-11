@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
@@ -109,8 +109,74 @@ function DonutChart({ value, label, color = '#FF6B35' }) {
     );
 }
 
+// ── Info Tooltip (fixed-position to escape overflow:hidden parents) ──────
+function InfoTooltip({ text }) {
+    const [pos, setPos] = useState(null);
+    const btnRef = useRef(null);
+
+    function showTooltip() {
+        if (btnRef.current) {
+            const r = btnRef.current.getBoundingClientRect();
+            setPos({
+                top: r.top + window.scrollY - 8,   // above the button
+                left: r.left + window.scrollX + r.width / 2  // horizontally centred
+            });
+        }
+    }
+
+    function hideTooltip() { setPos(null); }
+
+    return (
+        <>
+            <button
+                ref={btnRef}
+                type="button"
+                onFocus={showTooltip}
+                onBlur={hideTooltip}
+                onMouseEnter={e => { showTooltip(); e.currentTarget.style.background = 'rgba(255,107,53,0.2)'; e.currentTarget.style.color = '#FF8C5A'; }}
+                onMouseLeave={e => { hideTooltip(); e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#94A3B8'; }}
+                style={{
+                    background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: '50%', width: 20, height: 20, cursor: 'pointer',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, color: '#94A3B8', fontWeight: 700, lineHeight: 1,
+                    transition: 'background 0.2s, color 0.2s', flexShrink: 0,
+                    verticalAlign: 'middle'
+                }}
+            >
+                i
+            </button>
+            {pos && (
+                <div style={{
+                    position: 'fixed',
+                    top: pos.top,
+                    left: pos.left,
+                    transform: 'translate(-50%, -100%)',
+                    background: '#1E2030', border: '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: 10, padding: '10px 14px',
+                    width: 240, fontSize: 13, color: '#CBD5E1', lineHeight: 1.55,
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
+                    zIndex: 99999, pointerEvents: 'none',
+                    whiteSpace: 'normal'
+                }}>
+                    {text}
+                    {/* Arrow */}
+                    <div style={{
+                        position: 'absolute', top: '100%', left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: 0, height: 0,
+                        borderLeft: '6px solid transparent',
+                        borderRight: '6px solid transparent',
+                        borderTop: '6px solid #1E2030'
+                    }} />
+                </div>
+            )}
+        </>
+    );
+}
+
 // ── Section Components ───────────────────────────────
-function SectionCard({ icon, title, color, children, badge }) {
+function SectionCard({ icon, title, color, children, badge, info }) {
     return (
         <div style={{
             background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
@@ -126,6 +192,7 @@ function SectionCard({ icon, title, color, children, badge }) {
                         display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18
                     }}>{icon}</div>
                     <h2 style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 17, fontWeight: 700, color: '#F1F5F9' }}>{title}</h2>
+                    {info && <InfoTooltip text={info} />}
                 </div>
                 {badge && <span style={{ fontSize: 11, fontWeight: 600, color, background: `${color}15`, padding: '3px 10px', borderRadius: 100 }}>{badge}</span>}
             </div>
@@ -644,7 +711,8 @@ Return JSON:
 
                         {/* Risk bar chart */}
                         {report.journey.stages?.length > 0 && (
-                            <SectionCard icon="📈" title="Revenue Risk by Stage" color="#3B82F6" badge="5 Stages Mapped">
+                            <SectionCard icon="📈" title="Revenue Risk by Stage" color="#3B82F6" badge="5 Stages Mapped"
+                                info="Shows how much revenue you are at risk of losing at each step of the customer journey. Higher % = more customers dropping off at that stage.">
                                 <BarChart
                                     data={report.journey.stages.map(s => ({ label: s.name, value: s.riskScore || 70 }))}
                                     color="#3B82F6"
@@ -653,7 +721,8 @@ Return JSON:
                             </SectionCard>
                         )}
 
-                        <SectionCard icon="🗺️" title="5-Stage Customer Journey" color="#3B82F6">
+                        <SectionCard icon="🗺️" title="5-Stage Customer Journey" color="#3B82F6"
+                            info="A step-by-step map of how your customers find you, evaluate you, buy from you, stay with you, and recommend you. Each stage shows where you are losing people and what to do about it.">
                             {report.journey.stages?.map((s, i) => <JourneyStage key={i} stage={s} index={i} />)}
                         </SectionCard>
                     </div>
@@ -663,7 +732,8 @@ Return JSON:
                 {activeTab === 'psychology' && report?.psychology && (
                     <div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }} className="psych-grid">
-                            <SectionCard icon="✨" title="Core Desires" color="#8B5CF6">
+                            <SectionCard icon="✨" title="Core Desires" color="#8B5CF6"
+                                info="The deep emotional and practical things your customers really want when they look for a product like yours. Use these to write your headlines, ads, and pitch.">
                                 {report.psychology.coreDesires?.map((d, i) => (
                                     <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
                                         <div style={{ width: 20, height: 20, borderRadius: 6, background: '#8B5CF680', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, flexShrink: 0 }}>{i + 1}</div>
@@ -671,7 +741,8 @@ Return JSON:
                                     </div>
                                 ))}
                             </SectionCard>
-                            <SectionCard icon="🚨" title="Biggest Fears" color="#EF4444">
+                            <SectionCard icon="🚨" title="Biggest Fears" color="#EF4444"
+                                info="What your customers are most afraid of when making a purchase decision. Addressing these fears in your marketing directly reduces hesitation and increases trust.">
                                 {report.psychology.biggestFears?.map((f, i) => (
                                     <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
                                         <span style={{ color: '#EF4444', flexShrink: 0 }}>⚠</span>
@@ -681,14 +752,16 @@ Return JSON:
                             </SectionCard>
                         </div>
 
-                        <SectionCard icon="🎯" title="Buying Triggers" color="#10B981">
+                        <SectionCard icon="🎯" title="Buying Triggers" color="#10B981"
+                            info="The specific events or feelings that push a customer to finally make a purchase. These are the moments you should target with your ads, emails, and offers.">
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
                                 {report.psychology.buyingTriggers?.map((t, i) => <Tag key={i} text={t} color="#10B981" />)}
                             </div>
                         </SectionCard>
 
                         {report.psychology.psychScores && (
-                            <SectionCard icon="📡" title="Psychological Influence Scores" color="#8B5CF6">
+                            <SectionCard icon="📡" title="Psychological Influence Scores" color="#8B5CF6"
+                                info="A radar chart showing how strongly different psychological levers (trust, urgency, social proof etc.) influence your customers. Higher score = more impactful lever to use in messaging.">
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 32, flexWrap: 'wrap' }}>
                                     <RadarChart data={report.psychology.psychScores} color="#8B5CF6" />
                                     <div style={{ flex: 1 }}>
@@ -708,7 +781,8 @@ Return JSON:
                             </SectionCard>
                         )}
 
-                        <SectionCard icon="💬" title="Conversion Strategy" color="#FF6B35">
+                        <SectionCard icon="💬" title="Conversion Strategy" color="#FF6B35"
+                            info="AI-generated recommendations on exactly how to tweak your messaging, offer, and communication to convert more visitors into paying customers.">
                             <p style={{ fontSize: 15, lineHeight: 1.7, color: '#94A3B8', marginBottom: 16 }}>{report.psychology.conversionAdvice}</p>
                             {report.psychology.messagingHooks && (
                                 <>
@@ -746,7 +820,8 @@ Return JSON:
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }} className="opp-threat-grid">
-                            <SectionCard icon="🚀" title="Opportunities" color="#10B981">
+                            <SectionCard icon="🚀" title="Opportunities" color="#10B981"
+                                info="Market gaps and emerging trends your business can exploit right now to grow faster than competitors. These are real openings in your industry that are currently underserved.">
                                 {report.industry.opportunities?.map((o, i) => (
                                     <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                                         <span style={{ color: '#10B981', flexShrink: 0 }}>→</span>
@@ -754,7 +829,8 @@ Return JSON:
                                     </div>
                                 ))}
                             </SectionCard>
-                            <SectionCard icon="⚠️" title="Threats to Watch" color="#EF4444">
+                            <SectionCard icon="⚠️" title="Threats to Watch" color="#EF4444"
+                                info="External risks and competitive or market forces that could hurt your business if left unchecked. Being aware of these helps you stay one step ahead.">
                                 {report.industry.threats?.map((t, i) => (
                                     <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                                         <span style={{ color: '#EF4444', flexShrink: 0 }}>!</span>
@@ -764,13 +840,15 @@ Return JSON:
                             </SectionCard>
                         </div>
 
-                        <SectionCard icon="📊" title="Key Industry Trends" color="#3B82F6">
+                        <SectionCard icon="📊" title="Key Industry Trends" color="#3B82F6"
+                            info="The biggest shifts currently happening in your industry. Knowing these trends helps you align your product, marketing, and strategy with where the market is heading.">
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
                                 {report.industry.keyTrends?.map((t, i) => <Tag key={i} text={t} color="#3B82F6" />)}
                             </div>
                         </SectionCard>
 
-                        <SectionCard icon="🎯" title="Your Positioning Strategy" color="#F59E0B">
+                        <SectionCard icon="🎯" title="Your Positioning Strategy" color="#F59E0B"
+                            info="How your business should be uniquely positioned in the market to stand out from competitors. Includes the specific market gaps you can own and win.">
                             <p style={{ fontSize: 14, lineHeight: 1.7, color: '#94A3B8' }}>{report.industry.uniquePositioning}</p>
                             {report.industry.marketGaps && (
                                 <>
@@ -821,7 +899,8 @@ Return JSON:
                             <DonutChart value={100 - (report.buying.priceSensitivity || 65)} label="Price Flex" color="#F59E0B" />
                         </div>
 
-                        <SectionCard icon="🛒" title="5-Stage Buying Journey" color="#EF4444">
+                        <SectionCard icon="🛒" title="5-Stage Buying Journey" color="#EF4444"
+                            info="Traces the exact mental steps your customer goes through — from first realizing they have a problem to becoming a loyal repeat buyer. Each stage shows what action to take.">
                             {report.buying.buyingStages?.map((b, i) => (
                                 <div key={i} style={{ padding: '14px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                                     <div style={{ fontSize: 13, fontWeight: 700, color: '#EF4444', marginBottom: 4 }}>{b.stage}</div>
@@ -831,16 +910,19 @@ Return JSON:
                         </SectionCard>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }} className="buy-grid">
-                            <SectionCard icon="💡" title="Key Influencers" color="#F59E0B">
+                            <SectionCard icon="💡" title="Key Influencers" color="#F59E0B"
+                                info="The people, platforms, or content types that most influence your customer's purchase decision. Target these to amplify your reach and credibility.">
                                 {report.buying.keyInfluencers?.map((k, i) => <Tag key={i} text={k} color="#F59E0B" />)}
                             </SectionCard>
-                            <SectionCard icon="🚧" title="Purchase Barriers" color="#EF4444">
+                            <SectionCard icon="🚧" title="Purchase Barriers" color="#EF4444"
+                                info="The specific objections, doubts, or friction points that stop customers from completing a purchase. Removing these barriers is one of the fastest ways to increase conversions.">
                                 {report.buying.barriers?.map((b, i) => <Tag key={i} text={b} color="#EF4444" />)}
                             </SectionCard>
                         </div>
 
                         {report.buying.pricingPsychology && (
-                            <SectionCard icon="💳" title="Pricing Psychology" color="#10B981" style={{ marginTop: 16 }}>
+                            <SectionCard icon="💳" title="Pricing Psychology" color="#10B981"
+                                info="How to frame and present your pricing so customers feel they are getting great value. Small changes in how you show price can dramatically increase your conversion rate.">
                                 <p style={{ fontSize: 14, lineHeight: 1.7, color: '#94A3B8' }}>{report.buying.pricingPsychology}</p>
                             </SectionCard>
                         )}
@@ -858,7 +940,8 @@ Return JSON:
                 {activeTab === 'plan' && report?.actionPlan && (
                     <div>
                         {report.actionPlan.immediateActions && (
-                            <SectionCard icon="⚡" title="Top Priority Actions" color="#FF6B35" badge="Quick Wins">
+                            <SectionCard icon="⚡" title="Top Priority Actions" color="#FF6B35" badge="Quick Wins"
+                                info="The 3 highest-impact actions you should take immediately, ranked by effort vs. impact. These are your fastest path to visible results in the next 7 days.">
                                 {report.actionPlan.immediateActions.map((a, i) => (
                                     <div key={i} style={{
                                         display: 'flex', gap: 16, padding: '16px', marginBottom: 10,
@@ -906,7 +989,8 @@ Return JSON:
                         </div>
 
                         {report.actionPlan.kpis && (
-                            <SectionCard icon="📏" title="KPIs to Track" color="#10B981">
+                            <SectionCard icon="📏" title="KPIs to Track" color="#10B981"
+                                info="The Key Performance Indicators you should measure to know if your 30-day action plan is working. These numbers act as your progress report.">
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                                     {report.actionPlan.kpis.map((k, i) => <Tag key={i} text={k} color="#10B981" />)}
                                 </div>
@@ -914,7 +998,8 @@ Return JSON:
                         )}
 
                         {report.actionPlan.expectedOutcome && (
-                            <SectionCard icon="🎯" title="Expected Outcome (30 days)" color="#FF6B35">
+                            <SectionCard icon="🎯" title="Expected Outcome (30 days)" color="#FF6B35"
+                                info="What realistic results you should expect after consistently applying this action plan for 30 days. Use this as a benchmark to measure your progress.">
                                 <p style={{ fontSize: 15, lineHeight: 1.7, color: '#94A3B8' }}>{report.actionPlan.expectedOutcome}</p>
                             </SectionCard>
                         )}
