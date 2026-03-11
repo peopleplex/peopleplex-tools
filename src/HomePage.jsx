@@ -11,13 +11,32 @@ const INDUSTRIES = [
     'Manufacturing', 'Media & Entertainment', 'Non-Profit', 'Other'
 ];
 
-const PRICE_TIERS = [
-    { label: 'Free / Freemium', value: 'free' },
-    { label: 'Budget (< $50/mo)', value: 'budget' },
-    { label: 'Mid-Range ($50–$500/mo)', value: 'mid' },
-    { label: 'Premium ($500–$2k/mo)', value: 'premium' },
-    { label: 'Enterprise ($2k+/mo)', value: 'enterprise' },
+// Currency-aware price tiers
+const CURRENCIES = [
+    { label: '🇮🇳 India (INR ₹)', value: 'INR', symbol: '₹', tiers: ['Free / Freemium', '< ₹5,000/mo', '₹5,000–₹50,000/mo', '₹50,000–₹2L/mo', '₹2L+/mo'] },
+    { label: '🇺🇸 USA (USD $)', value: 'USD', symbol: '$', tiers: ['Free / Freemium', '< $50/mo', '$50–$500/mo', '$500–$2k/mo', '$2k+/mo'] },
+    { label: '🇬🇧 UK (GBP £)', value: 'GBP', symbol: '£', tiers: ['Free / Freemium', '< £40/mo', '£40–£400/mo', '£400–£1,600/mo', '£1,600+/mo'] },
+    { label: '🇪🇺 Europe (EUR €)', value: 'EUR', symbol: '€', tiers: ['Free / Freemium', '< €50/mo', '€50–€450/mo', '€450–€2k/mo', '€2k+/mo'] },
+    { label: '🇦🇪 UAE (AED د.إ)', value: 'AED', symbol: 'AED', tiers: ['Free / Freemium', '< AED 200/mo', 'AED 200–2,000/mo', 'AED 2,000–7,500/mo', 'AED 7,500+/mo'] },
+    { label: '🇸🇬 Singapore (SGD S$)', value: 'SGD', symbol: 'S$', tiers: ['Free / Freemium', '< S$70/mo', 'S$70–S$700/mo', 'S$700–S$2,800/mo', 'S$2,800+/mo'] },
+    { label: '🇦🇺 Australia (AUD A$)', value: 'AUD', symbol: 'A$', tiers: ['Free / Freemium', '< A$80/mo', 'A$80–A$800/mo', 'A$800–A$3,200/mo', 'A$3,200+/mo'] },
+    { label: '🇨🇦 Canada (CAD C$)', value: 'CAD', symbol: 'C$', tiers: ['Free / Freemium', '< C$70/mo', 'C$70–C$700/mo', 'C$700–C$2,800/mo', 'C$2,800+/mo'] },
+    { label: '🇯🇵 Japan (JPY ¥)', value: 'JPY', symbol: '¥', tiers: ['Free / Freemium', '< ¥7,500/mo', '¥7,500–¥75,000/mo', '¥75,000–¥300,000/mo', '¥300,000+/mo'] },
+    { label: '🇧🇷 Brazil (BRL R$)', value: 'BRL', symbol: 'R$', tiers: ['Free / Freemium', '< R$250/mo', 'R$250–R$2,500/mo', 'R$2,500–R$10,000/mo', 'R$10,000+/mo'] },
+    { label: '🇲🇽 Mexico (MXN MX$)', value: 'MXN', symbol: 'MX$', tiers: ['Free / Freemium', '< MX$900/mo', 'MX$900–MX$9,000/mo', 'MX$9,000–MX$35,000/mo', 'MX$35,000+/mo'] },
+    { label: '🇿🇦 South Africa (ZAR R)', value: 'ZAR', symbol: 'R', tiers: ['Free / Freemium', '< R900/mo', 'R900–R9,000/mo', 'R9,000–R36,000/mo', 'R36,000+/mo'] },
+    { label: '🇳🇬 Nigeria (NGN ₦)', value: 'NGN', symbol: '₦', tiers: ['Free / Freemium', '< ₦40,000/mo', '₦40,000–₦400,000/mo', '₦400,000–₦1.6M/mo', '₦1.6M+/mo'] },
+    { label: '🇲🇾 Malaysia (MYR RM)', value: 'MYR', symbol: 'RM', tiers: ['Free / Freemium', '< RM230/mo', 'RM230–RM2,300/mo', 'RM2,300–RM9,000/mo', 'RM9,000+/mo'] },
+    { label: '🇵🇭 Philippines (PHP ₱)', value: 'PHP', symbol: '₱', tiers: ['Free / Freemium', '< ₱2,800/mo', '₱2,800–₱28,000/mo', '₱28,000–₱112,000/mo', '₱112,000+/mo'] },
 ];
+
+const TIER_VALUES = ['free', 'budget', 'mid', 'premium', 'enterprise'];
+
+function getPriceTiers(currencyCode) {
+    const cur = CURRENCIES.find(c => c.value === currencyCode) || CURRENCIES[0];
+    return cur.tiers.map((label, i) => ({ label, value: TIER_VALUES[i] }));
+}
+
 
 const BUSINESS_TYPES = [
     { label: 'B2C (Business to Consumer)', value: 'b2c' },
@@ -72,6 +91,80 @@ const FEATURES = [
 ];
 
 const STEP_LABELS = ['Business Info', 'Target Customer', 'Goals & Notes'];
+
+// ── Custom Dropdown (replaces native <select> to avoid white OS dropdown) ──
+function CustomSelect({ value, onChange, options, placeholder }) {
+    const [open, setOpen] = useState(false);
+    const ref = React.useRef(null);
+
+    useEffect(() => {
+        function handleClick(e) {
+            if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+        }
+        document.addEventListener('mousedown', handleClick);
+        return () => document.removeEventListener('mousedown', handleClick);
+    }, []);
+
+    const selected = options.find(o => (o.value ?? o) === value);
+    const displayLabel = selected ? (selected.label ?? selected) : placeholder;
+
+    return (
+        <div ref={ref} style={{ position: 'relative' }}>
+            <button
+                type="button"
+                onClick={() => setOpen(o => !o)}
+                style={{
+                    width: '100%', background: 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${open ? 'rgba(255,107,53,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                    borderRadius: 10, padding: '12px 14px',
+                    color: value ? '#F1F5F9' : '#475569',
+                    fontSize: 15, fontFamily: 'Inter, sans-serif',
+                    textAlign: 'left', cursor: 'pointer',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    transition: 'border-color 0.2s'
+                }}
+            >
+                <span>{displayLabel}</span>
+                <span style={{ fontSize: 11, color: '#64748B', transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>▼</span>
+            </button>
+            {open && (
+                <div style={{
+                    position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+                    background: '#1A1A2E', border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 10, zIndex: 999, maxHeight: 220, overflowY: 'auto',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                    scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,107,53,0.3) transparent'
+                }}>
+                    {options.map((opt, i) => {
+                        const val = opt.value ?? opt;
+                        const label = opt.label ?? opt;
+                        const isSelected = val === value;
+                        return (
+                            <button
+                                key={i}
+                                type="button"
+                                onClick={() => { onChange(val); setOpen(false); }}
+                                style={{
+                                    display: 'block', width: '100%', textAlign: 'left',
+                                    padding: '10px 14px', background: isSelected ? 'rgba(255,107,53,0.15)' : 'transparent',
+                                    border: 'none', color: isSelected ? '#FF8C5A' : '#C4C4D4',
+                                    fontSize: 14, fontFamily: 'Inter, sans-serif', cursor: 'pointer',
+                                    borderBottom: i < options.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                                    transition: 'background 0.15s'
+                                }}
+                                onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+                                onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                            >
+                                {label}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+}
+
 
 function Navbar({ user, onOpenAuth, navigate }) {
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -189,6 +282,7 @@ export default function HomePage({ user, onOpenAuth }) {
         industry: '',
         businessType: '',
         website: '',
+        currency: 'INR',
         priceTier: '',
         targetAge: '',
         targetGender: 'All',
@@ -403,26 +497,41 @@ export default function HomePage({ user, onOpenAuth }) {
                                 </div>
                                 <div style={fieldStyle}>
                                     <label style={labelStyle}>Industry *</label>
-                                    <select style={selectStyle} value={form.industry} onChange={e => set('industry', e.target.value)}>
-                                        <option value="">Select industry...</option>
-                                        {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
-                                    </select>
+                                    <CustomSelect
+                                        value={form.industry}
+                                        onChange={v => set('industry', v)}
+                                        placeholder="Select industry..."
+                                        options={INDUSTRIES}
+                                    />
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
                                     <div>
                                         <label style={labelStyle}>Business Type *</label>
-                                        <select style={selectStyle} value={form.businessType} onChange={e => set('businessType', e.target.value)}>
-                                            <option value="">Select type...</option>
-                                            {BUSINESS_TYPES.map(b => <option key={b.value} value={b.value}>{b.label}</option>)}
-                                        </select>
+                                        <CustomSelect
+                                            value={form.businessType}
+                                            onChange={v => set('businessType', v)}
+                                            placeholder="Select type..."
+                                            options={BUSINESS_TYPES}
+                                        />
                                     </div>
                                     <div>
-                                        <label style={labelStyle}>Price Tier *</label>
-                                        <select style={selectStyle} value={form.priceTier} onChange={e => set('priceTier', e.target.value)}>
-                                            <option value="">Select tier...</option>
-                                            {PRICE_TIERS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                                        </select>
+                                        <label style={labelStyle}>Country / Currency *</label>
+                                        <CustomSelect
+                                            value={form.currency}
+                                            onChange={v => { set('currency', v); set('priceTier', ''); }}
+                                            placeholder="Select country..."
+                                            options={CURRENCIES}
+                                        />
                                     </div>
+                                </div>
+                                <div style={fieldStyle}>
+                                    <label style={labelStyle}>Price Tier *</label>
+                                    <CustomSelect
+                                        value={form.priceTier}
+                                        onChange={v => set('priceTier', v)}
+                                        placeholder="Select tier..."
+                                        options={getPriceTiers(form.currency)}
+                                    />
                                 </div>
                                 <div style={fieldStyle}>
                                     <label style={labelStyle}>Website URL (optional)</label>
@@ -449,18 +558,25 @@ export default function HomePage({ user, onOpenAuth }) {
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
                                     <div>
                                         <label style={labelStyle}>Target Age Group *</label>
-                                        <select style={selectStyle} value={form.targetAge} onChange={e => set('targetAge', e.target.value)}>
-                                            <option value="">Select age...</option>
-                                            {CUSTOMER_AGES.map(a => <option key={a} value={a}>{a}</option>)}
-                                        </select>
+                                        <CustomSelect
+                                            value={form.targetAge}
+                                            onChange={v => set('targetAge', v)}
+                                            placeholder="Select age..."
+                                            options={CUSTOMER_AGES}
+                                        />
                                     </div>
                                     <div>
                                         <label style={labelStyle}>Gender Focus</label>
-                                        <select style={selectStyle} value={form.targetGender} onChange={e => set('targetGender', e.target.value)}>
-                                            <option value="All">All Genders</option>
-                                            <option value="Female">Primarily Female</option>
-                                            <option value="Male">Primarily Male</option>
-                                        </select>
+                                        <CustomSelect
+                                            value={form.targetGender}
+                                            onChange={v => set('targetGender', v)}
+                                            placeholder="All Genders"
+                                            options={[
+                                                { label: 'All Genders', value: 'All' },
+                                                { label: 'Primarily Female', value: 'Female' },
+                                                { label: 'Primarily Male', value: 'Male' },
+                                            ]}
+                                        />
                                     </div>
                                 </div>
                                 <div style={fieldStyle}>
@@ -485,15 +601,19 @@ export default function HomePage({ user, onOpenAuth }) {
                             <>
                                 <div style={fieldStyle}>
                                     <label style={labelStyle}>Primary Goal for this Analysis</label>
-                                    <select style={selectStyle} value={form.goal} onChange={e => set('goal', e.target.value)}>
-                                        <option value="">Select your goal...</option>
-                                        <option value="increase_conversions">Increase Conversions</option>
-                                        <option value="reduce_churn">Reduce Customer Churn</option>
-                                        <option value="enter_new_market">Enter a New Market</option>
-                                        <option value="improve_retention">Improve Retention</option>
-                                        <option value="launch_product">Launch a New Product</option>
-                                        <option value="understand_audience">Understand My Audience</option>
-                                    </select>
+                                    <CustomSelect
+                                        value={form.goal}
+                                        onChange={v => set('goal', v)}
+                                        placeholder="Select your goal..."
+                                        options={[
+                                            { label: 'Increase Conversions', value: 'increase_conversions' },
+                                            { label: 'Reduce Customer Churn', value: 'reduce_churn' },
+                                            { label: 'Enter a New Market', value: 'enter_new_market' },
+                                            { label: 'Improve Retention', value: 'improve_retention' },
+                                            { label: 'Launch a New Product', value: 'launch_product' },
+                                            { label: 'Understand My Audience', value: 'understand_audience' },
+                                        ]}
+                                    />
                                 </div>
                                 <div style={fieldStyle}>
                                     <label style={labelStyle}>Additional Context (optional)</label>
