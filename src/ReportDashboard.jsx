@@ -109,38 +109,54 @@ function DonutChart({ value, label, color = '#FF6B35' }) {
     );
 }
 
-// ── Info Tooltip ─────────────────────────────────────────
+// ── Info Tooltip (fixed-position to escape overflow:hidden parents) ──────
 function InfoTooltip({ text }) {
-    const [visible, setVisible] = useState(false);
+    const [pos, setPos] = useState(null);
+    const btnRef = useRef(null);
+
+    function showTooltip() {
+        if (btnRef.current) {
+            const r = btnRef.current.getBoundingClientRect();
+            setPos({
+                top: r.top + window.scrollY - 8,   // above the button
+                left: r.left + window.scrollX + r.width / 2  // horizontally centred
+            });
+        }
+    }
+
+    function hideTooltip() { setPos(null); }
+
     return (
-        <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+        <>
             <button
+                ref={btnRef}
                 type="button"
-                onMouseEnter={() => setVisible(true)}
-                onMouseLeave={() => setVisible(false)}
-                onFocus={() => setVisible(true)}
-                onBlur={() => setVisible(false)}
+                onFocus={showTooltip}
+                onBlur={hideTooltip}
+                onMouseEnter={e => { showTooltip(); e.currentTarget.style.background = 'rgba(255,107,53,0.2)'; e.currentTarget.style.color = '#FF8C5A'; }}
+                onMouseLeave={e => { hideTooltip(); e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#94A3B8'; }}
                 style={{
                     background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
                     borderRadius: '50%', width: 20, height: 20, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 11, color: '#94A3B8', fontWeight: 700, lineHeight: 1,
-                    transition: 'background 0.2s, color 0.2s', flexShrink: 0
+                    transition: 'background 0.2s, color 0.2s', flexShrink: 0,
+                    verticalAlign: 'middle'
                 }}
-                onMouseEnterCapture={e => { e.currentTarget.style.background = 'rgba(255,107,53,0.2)'; e.currentTarget.style.color = '#FF8C5A'; }}
-                onMouseLeaveCapture={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#94A3B8'; }}
             >
                 i
             </button>
-            {visible && (
+            {pos && (
                 <div style={{
-                    position: 'absolute', bottom: 'calc(100% + 8px)', left: '50%',
-                    transform: 'translateX(-50%)',
-                    background: '#1E2030', border: '1px solid rgba(255,255,255,0.12)',
+                    position: 'fixed',
+                    top: pos.top,
+                    left: pos.left,
+                    transform: 'translate(-50%, -100%)',
+                    background: '#1E2030', border: '1px solid rgba(255,255,255,0.15)',
                     borderRadius: 10, padding: '10px 14px',
                     width: 240, fontSize: 13, color: '#CBD5E1', lineHeight: 1.55,
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-                    zIndex: 9999, pointerEvents: 'none',
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
+                    zIndex: 99999, pointerEvents: 'none',
                     whiteSpace: 'normal'
                 }}>
                     {text}
@@ -155,7 +171,7 @@ function InfoTooltip({ text }) {
                     }} />
                 </div>
             )}
-        </div>
+        </>
     );
 }
 
