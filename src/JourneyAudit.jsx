@@ -18,16 +18,22 @@ import { useNavigate, useLocation, Routes, Route } from "react-router-dom";
 import ToolsDashboard from "./ToolsDashboard.jsx";
 import CustomerPsychology from "./CustomerPsychology.jsx";
 import UserProfileSettings from "./UserProfileSettings.jsx";
+import NotFound from "./NotFound.jsx";
+import AuthScreen from "./AuthScreen.jsx";
+import UserDashboard from "./UserDashboard.jsx";
+import SharedReportView from "./SharedReportView.jsx";
+import ProjectsDashboard from "./ProjectsDashboard.jsx";
+import CompetitorAnalysis from "./CompetitorAnalysis.jsx";
 
 const BOOKING_LINK = "https://iamhariharan.com/training-institutes";
 
 // ── Brand tokens ──────────────────────────────────────────────
-const PRIMARY_BLUE = "#007AFF";
-const DARK_MODE_BACKGROUND = "#000000";
-const CARD_BACKGROUND = "#1C1C1E";
-const BORDER_COLOR = "#3A3A3C";
-const MUTED_COLOR = "#8E8E93";
-const TEXT_COLOR = "#FFFFFF";
+const PRIMARY_BLUE = "#FF6B35";
+const DARK_MODE_BACKGROUND = "#F9FAFB";
+const CARD_BACKGROUND = "#FFFFFF";
+const BORDER_COLOR = "#E5E7EB";
+const MUTED_COLOR = "#6B7280";
+const TEXT_COLOR = "#111827";
 
 // ── Audit questions per journey stage ─────────────────────────
 const JOURNEY_STAGES = [
@@ -126,10 +132,10 @@ const Pill = ({ children, active, onClick }) => (
       border: `1px solid ${active ? PRIMARY_BLUE : BORDER_COLOR}`,
       background: active ? `${PRIMARY_BLUE}30` : "transparent",
       color: active ? PRIMARY_BLUE : MUTED_COLOR,
-      fontSize: 14,
+      fontSize: 15,
       cursor: "pointer",
       transition: "all .2s",
-      fontWeight: 500,
+      fontWeight: 400,
     }}
   >
     {children}
@@ -140,11 +146,11 @@ const Input = ({ label, placeholder, value, onChange, textarea }) => (
   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
     <label
       style={{
-        fontSize: 14,
+        fontSize: 15,
         color: MUTED_COLOR,
         letterSpacing: ".02em",
         textTransform: "uppercase",
-        fontWeight: 600,
+        fontWeight: 400,
       }}
     >
       {label}
@@ -161,7 +167,7 @@ const Input = ({ label, placeholder, value, onChange, textarea }) => (
           borderRadius: 12,
           padding: "14px 16px",
           color: TEXT_COLOR,
-          fontSize: 16,
+          fontSize: 15,
           resize: "vertical",
           outline: "none",
           fontFamily: "inherit",
@@ -178,7 +184,7 @@ const Input = ({ label, placeholder, value, onChange, textarea }) => (
           borderRadius: 12,
           padding: "14px 16px",
           color: TEXT_COLOR,
-          fontSize: 16,
+          fontSize: 15,
           outline: "none",
           fontFamily: "inherit",
         }}
@@ -196,14 +202,14 @@ const GradientButton = ({ children, onClick, disabled, fullWidth, secondary }) =
       padding: "16px 28px",
       borderRadius: 14,
       border: secondary ? `1.5px solid ${BORDER_COLOR}` : "none",
-      background: secondary ? "transparent" : disabled ? BORDER_COLOR : `linear-gradient(45deg, ${PRIMARY_BLUE}, #00AFFF)`,
+      background: secondary ? "transparent" : disabled ? BORDER_COLOR : PRIMARY_BLUE,
       color: disabled ? MUTED_COLOR : secondary ? MUTED_COLOR : "#FFFFFF",
-      fontSize: 16,
-      fontWeight: 700,
+      fontSize: 15,
+      fontWeight: 400,
       cursor: disabled ? "not-allowed" : "pointer",
       transition: "all .2s ease-in-out",
       letterSpacing: ".02em",
-      boxShadow: secondary || disabled ? "none" : "0 4px 15px 0 rgba(0, 122, 255, 0.35)",
+      boxShadow: secondary || disabled ? "none" : "0 4px 15px 0 rgba(255, 107, 53, 0.30)",
     }}
   >
     {children}
@@ -212,7 +218,8 @@ const GradientButton = ({ children, onClick, disabled, fullWidth, secondary }) =
 
 // ── Step indicator ─────────────────────────────────────────────
 const Steps = ({ current }) => {
-  const steps = ["Describe", "Personas", "Journey", "Audit", "Results"];
+  // current=1→Personas active, current=2→Journey active, current=3→Results active
+  const steps = ["Personas", "Journey", "Results"];
   return (
     <div
       style={{
@@ -245,25 +252,25 @@ const Steps = ({ current }) => {
                 height: 36,
                 borderRadius: "50%",
                 background:
-                  i < current ? `linear-gradient(45deg, ${PRIMARY_BLUE}, #00AFFF)` : i === current ? CARD_BACKGROUND : "transparent",
-                border: `2px solid ${i <= current ? PRIMARY_BLUE : BORDER_COLOR}`,
+                  i < current - 1 ? PRIMARY_BLUE : i === current - 1 ? CARD_BACKGROUND : "transparent",
+                border: `2px solid ${i <= current - 1 ? PRIMARY_BLUE : BORDER_COLOR}`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 14,
-                fontWeight: 700,
-                color: i <= current ? "#FFFFFF" : MUTED_COLOR,
+                fontSize: 15,
+                fontWeight: 400,
+                color: i <= current - 1 ? "#FFFFFF" : MUTED_COLOR,
                 transition: "all .3s ease-in-out",
               }}
             >
-              {i < current ? "✓" : i + 1}
+              {i < current - 1 ? "✓" : i + 1}
             </div>
             <span
               style={{
-                fontSize: 12,
-                color: i === current ? PRIMARY_BLUE : MUTED_COLOR,
+                fontSize: 14,
+                color: i === current - 1 ? PRIMARY_BLUE : MUTED_COLOR,
                 whiteSpace: "nowrap",
-                fontWeight: i === current ? 600 : 400,
+                fontWeight: i === current - 1 ? 600 : 400,
               }}
             >
               {s}
@@ -276,7 +283,7 @@ const Steps = ({ current }) => {
                 height: 2,
                 margin: "0 8px",
                 marginBottom: 24,
-                background: i < current ? PRIMARY_BLUE : BORDER_COLOR,
+                background: i < current - 1 ? PRIMARY_BLUE : BORDER_COLOR,
                 transition: "all .3s ease-in-out",
               }}
             />
@@ -302,7 +309,7 @@ const Spinner = ({ message }) => (
       }}
     />
     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    <p style={{ color: MUTED_COLOR, fontSize: 16 }}>{message}</p>
+    <p style={{ color: MUTED_COLOR, fontSize: 15 }}>{message}</p>
   </div>
 );
 
@@ -463,6 +470,15 @@ const TIER_INSIGHTS = {
 // ══════════════════════════════════════════════════════════════
 function StepDescribe({ onNext }) {
   const [setupStep, setSetupStep] = useState(1);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisPct, setAnalysisPct] = useState(0);
+  const [analysisChecks, setAnalysisChecks] = useState([]);
+
+  const ANALYSIS_CHECKS = [
+    "Industry dynamics identified",
+    "Business psychology classified",
+    "Purchase behaviour analysed",
+  ];
 
   const [businessName, setBusinessName] = useState("");
   const [industry, setIndustry] = useState("");
@@ -481,6 +497,108 @@ function StepDescribe({ onNext }) {
     location.trim();
   const step3Ready = pricingTier !== null;
 
+  // ── Analysis phase ─────────────────────────────────────────
+  async function runAnalysis(data) {
+    setAnalyzing(true);
+    setAnalysisPct(0);
+    setAnalysisChecks([]);
+
+    // Animate progress bar
+    const timer = setInterval(() => {
+      setAnalysisPct(prev => {
+        if (prev >= 95) { clearInterval(timer); return 95; }
+        return prev + Math.random() * 8;
+      });
+    }, 300);
+
+    // Stagger checkmarks in
+    setTimeout(() => setAnalysisChecks([0]), 800);
+    setTimeout(() => setAnalysisChecks([0, 1]), 1800);
+    setTimeout(() => setAnalysisChecks([0, 1, 2]), 2800);
+
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          max_tokens: 400,
+          messages: [{
+            role: "user",
+            content: `Analyze this business in JSON only, no markdown:
+{
+  "industryDynamics": "one-line summary of how this industry works",
+  "businessPsychology": "one-line buyer psychology type",
+  "purchaseBehaviour": "one-line how customers make purchase decisions"
+}
+Business: ${data.businessName}, Industry: ${data.industry}, Pricing: ${data.pricingTier?.label || 'Mid-Range'}, Location: ${data.location}`
+          }]
+        })
+      });
+      const json = await res.json();
+      const text = (json.content?.[0]?.text || "").replace(/```json|```/g, "").trim();
+      try {
+        const parsed = JSON.parse(text);
+        data.analysis = parsed;
+      } catch (_) {
+        data.analysis = {};
+      }
+    } catch (_) {
+      data.analysis = {};
+    }
+
+    clearInterval(timer);
+    setAnalysisPct(100);
+    setTimeout(() => onNext(data), 600);
+  }
+
+  if (analyzing) {
+    return (
+      <div
+        style={{
+          background: "#0f172a",
+          borderRadius: 20,
+          padding: "48px 40px",
+          fontFamily: "'Inter Tight', monospace",
+          minHeight: 260,
+        }}
+      >
+        <p style={{ color: "#94a3b8", fontSize: 14, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 16 }}>Analyzing Your Business...</p>
+        {/* Progress bar */}
+        <div style={{ background: "#1e293b", borderRadius: 4, height: 10, marginBottom: 10, overflow: "hidden" }}>
+          <div
+            style={{
+              height: "100%",
+              borderRadius: 4,
+              width: `${analysisPct}%`,
+              background: "linear-gradient(90deg, #FF6B35, #FF8C5A)",
+              transition: "width .4s ease",
+            }}
+          />
+        </div>
+        <p style={{ color: "#475569", fontSize: 13, marginBottom: 32 }}>{Math.round(analysisPct)}%</p>
+        {/* Checkmarks */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {ANALYSIS_CHECKS.map((label, idx) => (
+            <div
+              key={idx}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                opacity: analysisChecks.includes(idx) ? 1 : 0.2,
+                transform: analysisChecks.includes(idx) ? "translateX(0)" : "translateX(-8px)",
+                transition: "all .4s ease",
+              }}
+            >
+              <span style={{ color: "#22c55e", fontSize: 15, fontWeight: 400 }}>✓</span>
+              <span style={{ color: "#cbd5e1", fontSize: 14 }}>{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div style={{ marginBottom: 32 }}>
@@ -492,20 +610,20 @@ function StepDescribe({ onNext }) {
 
         {setupStep === 1 && (
           <>
-            <h2 style={{ fontSize: 28, fontWeight: 800, color: TEXT_COLOR, margin: "0 0 8px 0" }}>Step 1: Core Identity</h2>
-            <p style={{ color: MUTED_COLOR, margin: 0, fontSize: 16 }}>Establish the foundational identity of the business.</p>
+            <h2 style={{ fontSize: 22, fontWeight: 400, color: TEXT_COLOR, margin: "0 0 8px 0" }}>Step 1: Core Identity</h2>
+            <p style={{ color: MUTED_COLOR, margin: 0, fontSize: 15 }}>Establish the foundational identity of the business.</p>
           </>
         )}
         {setupStep === 2 && (
           <>
-            <h2 style={{ fontSize: 28, fontWeight: 800, color: TEXT_COLOR, margin: "0 0 8px 0" }}>Step 2: Digital Footprint</h2>
-            <p style={{ color: MUTED_COLOR, margin: 0, fontSize: 16 }}>Link their core channels so the AI can analyze their current presence.</p>
+            <h2 style={{ fontSize: 22, fontWeight: 400, color: TEXT_COLOR, margin: "0 0 8px 0" }}>Step 2: Digital Footprint</h2>
+            <p style={{ color: MUTED_COLOR, margin: 0, fontSize: 15 }}>Link their core channels so the AI can analyze their current presence.</p>
           </>
         )}
         {setupStep === 3 && (
           <>
-            <h2 style={{ fontSize: 28, fontWeight: 800, color: TEXT_COLOR, margin: "0 0 8px 0" }}>Step 3: Market Positioning</h2>
-            <p style={{ color: MUTED_COLOR, margin: 0, fontSize: 16 }}>Determine where their offer sits in the wider market ecosystem.</p>
+            <h2 style={{ fontSize: 22, fontWeight: 400, color: TEXT_COLOR, margin: "0 0 8px 0" }}>Step 3: Market Positioning</h2>
+            <p style={{ color: MUTED_COLOR, margin: 0, fontSize: 15 }}>Determine where their offer sits in the wider market ecosystem.</p>
           </>
         )}
       </div>
@@ -576,7 +694,7 @@ function StepDescribe({ onNext }) {
                 background: "transparent",
                 border: `1.5px solid ${BORDER_COLOR}`,
                 color: TEXT_COLOR,
-                fontWeight: 700,
+                fontWeight: 400,
                 cursor: "pointer",
                 transition: "all .2s"
               }}
@@ -603,19 +721,19 @@ function StepDescribe({ onNext }) {
           <div>
             <div
               style={{
-                fontSize: 14,
+                fontSize: 15,
                 color: MUTED_COLOR,
                 letterSpacing: ".02em",
                 textTransform: "uppercase",
                 marginBottom: 6,
-                fontWeight: 600,
+                fontWeight: 400,
               }}
             >
               Pricing Tier
             </div>
             <p
               style={{
-                fontSize: 14,
+                fontSize: 15,
                 color: MUTED_COLOR,
                 marginBottom: 14,
                 lineHeight: 1.5,
@@ -681,8 +799,8 @@ function StepDescribe({ onNext }) {
                       >
                         <span
                           style={{
-                            fontSize: 16,
-                            fontWeight: 700,
+                            fontSize: 15,
+                            fontWeight: 400,
                             color: sel ? TEXT_COLOR : MUTED_COLOR,
                           }}
                         >
@@ -690,28 +808,28 @@ function StepDescribe({ onNext }) {
                         </span>
                         <span
                           style={{
-                            fontSize: 12,
+                            fontSize: 14,
                             padding: "3px 10px",
                             borderRadius: 999,
                             background: tier.color + "33",
                             color: tier.color,
-                            fontWeight: 600,
+                            fontWeight: 400,
                           }}
                         >
                           {tier.tag}
                         </span>
                       </div>
                       <div
-                        style={{ fontSize: 14, color: MUTED_COLOR, lineHeight: 1.5 }}
+                        style={{ fontSize: 15, color: MUTED_COLOR, lineHeight: 1.5 }}
                       >
                         {tier.description}
                       </div>
                       <div
                         style={{
-                          fontSize: 13,
+                          fontSize: 14,
                           color: sel ? tier.color : "#666",
                           marginTop: 6,
-                          fontWeight: 500,
+                          fontWeight: 400,
                         }}
                       >
                         {
@@ -725,31 +843,33 @@ function StepDescribe({ onNext }) {
               })}
             </div>
 
-            {pricingTier && (
-              <div
-                style={{
-                  marginTop: 14,
-                  padding: "14px 16px",
-                  background: pricingTier.color + "15",
-                  border: "1px solid " + pricingTier.color + "40",
-                  borderRadius: 12,
-                }}
-              >
+            <div style={{ minHeight: 100, marginTop: 4 }}>
+              {pricingTier && (
                 <div
                   style={{
-                    fontSize: 13,
-                    color: pricingTier.color,
-                    fontWeight: 700,
-                    marginBottom: 4,
+                    marginTop: 14,
+                    padding: "14px 16px",
+                    background: pricingTier.color + "15",
+                    border: "1px solid " + pricingTier.color + "40",
+                    borderRadius: 12,
                   }}
                 >
-                  {pricingTier.icon} {pricingTier.tag} Customer Insight
+                  <div
+                    style={{
+                      fontSize: 14,
+                      color: pricingTier.color,
+                      fontWeight: 400,
+                      marginBottom: 4,
+                    }}
+                  >
+                    {pricingTier.icon} {pricingTier.tag} Customer Insight
+                  </div>
+                  <div style={{ fontSize: 15, color: MUTED_COLOR, lineHeight: 1.6 }}>
+                    {TIER_INSIGHTS[pricingTier.id]}
+                  </div>
                 </div>
-                <div style={{ fontSize: 14, color: MUTED_COLOR, lineHeight: 1.6 }}>
-                  {TIER_INSIGHTS[pricingTier.id]}
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           <Input
@@ -769,7 +889,7 @@ function StepDescribe({ onNext }) {
                 background: "transparent",
                 border: `1.5px solid ${BORDER_COLOR}`,
                 color: TEXT_COLOR,
-                fontWeight: 700,
+                fontWeight: 400,
                 cursor: "pointer",
                 transition: "all .2s"
               }}
@@ -787,7 +907,7 @@ function StepDescribe({ onNext }) {
                 fullWidth
                 disabled={!step3Ready}
                 onClick={() =>
-                  onNext({
+                  runAnalysis({
                     businessName,
                     industry,
                     description,
@@ -900,20 +1020,20 @@ Return ONLY valid JSON, no markdown, no explanation:
       <div style={{ marginBottom: 28 }}>
         <div
           style={{
-            fontSize: 14,
+            fontSize: 15,
             color: PRIMARY_BLUE,
             letterSpacing: ".1em",
             textTransform: "uppercase",
             marginBottom: 8,
-            fontWeight: 600,
+            fontWeight: 400,
           }}
         >
           Step 2 of 5
         </div>
-        <h2 style={{ fontSize: 28, fontWeight: 800, color: TEXT_COLOR, margin: 0 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 400, color: TEXT_COLOR, margin: 0 }}>
           Who Is Your Customer?
         </h2>
-        <p style={{ color: MUTED_COLOR, marginTop: 8, fontSize: 16 }}>
+        <p style={{ color: MUTED_COLOR, marginTop: 8, fontSize: 15 }}>
           Here are 3 unique personas we generated for your business.
         </p>
       </div>
@@ -945,23 +1065,23 @@ Return ONLY valid JSON, no markdown, no explanation:
                     marginBottom: 4,
                   }}
                 >
-                  <span style={{ fontSize: 20, fontWeight: 800, color: TEXT_COLOR }}>
+                  <span style={{ fontSize: 18, fontWeight: 400, color: TEXT_COLOR }}>
                     {p.name}
                   </span>
                   <span
                     style={{
-                      fontSize: 12,
+                      fontSize: 14,
                       padding: "4px 12px",
                       borderRadius: 999,
                       background: `${PRIMARY_BLUE}30`,
                       color: PRIMARY_BLUE,
-                      fontWeight: 600,
+                      fontWeight: 400,
                     }}
                   >
                     {p.archetype}
                   </span>
                 </div>
-                <div style={{ fontSize: 14, color: MUTED_COLOR }}>
+                <div style={{ fontSize: 15, color: MUTED_COLOR }}>
                   {p.age} · {p.role}
                 </div>
               </div>
@@ -990,15 +1110,15 @@ Return ONLY valid JSON, no markdown, no explanation:
                 <div
                   key={item.label}
                   style={{
-                    background: "#1C1C1E",
+                    background: "#FFFFFF",
                     borderRadius: 10,
                     padding: "12px 14px",
                   }}
                 >
-                  <div style={{ fontSize: 12, color: MUTED_COLOR, marginBottom: 4 }}>
+                  <div style={{ fontSize: 14, color: MUTED_COLOR, marginBottom: 4 }}>
                     {item.label}
                   </div>
-                  <div style={{ fontSize: 14, color: TEXT_COLOR, lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 15, color: TEXT_COLOR, lineHeight: 1.5 }}>
                     {item.value}
                   </div>
                 </div>
@@ -1165,20 +1285,20 @@ Return ONLY valid JSON, no markdown backticks, no explanation:
       <div style={{ marginBottom: 24 }}>
         <div
           style={{
-            fontSize: 14,
+            fontSize: 15,
             color: PRIMARY_BLUE,
             letterSpacing: ".1em",
             textTransform: "uppercase",
             marginBottom: 8,
-            fontWeight: 600,
+            fontWeight: 400,
           }}
         >
           Step 3 of 5
         </div>
-        <h2 style={{ fontSize: 28, fontWeight: 800, color: TEXT_COLOR, margin: 0 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 400, color: TEXT_COLOR, margin: 0 }}>
           Customer Journeys
         </h2>
-        <p style={{ color: MUTED_COLOR, marginTop: 8, fontSize: 16 }}>
+        <p style={{ color: MUTED_COLOR, marginTop: 8, fontSize: 15 }}>
           Here is how each persona navigates the 5 stages to becoming your
           customer.
         </p>
@@ -1239,7 +1359,7 @@ Return ONLY valid JSON, no markdown backticks, no explanation:
               border: "none",
               background: activeStage === i ? PRIMARY_BLUE : CARD_BACKGROUND,
               color: activeStage === i ? "#FFFFFF" : MUTED_COLOR,
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: activeStage === i ? 700 : 500,
               cursor: "pointer",
               whiteSpace: "nowrap",
@@ -1264,9 +1384,9 @@ Return ONLY valid JSON, no markdown backticks, no explanation:
           <div style={{ marginBottom: 20 }}>
             <div
               style={{
-                fontSize: 13,
+                fontSize: 14,
                 color: PRIMARY_BLUE,
-                fontWeight: 800,
+                fontWeight: 400,
                 textTransform: "uppercase",
                 marginBottom: 6,
                 letterSpacing: '.05em',
@@ -1276,8 +1396,8 @@ Return ONLY valid JSON, no markdown backticks, no explanation:
             </div>
             <div
               style={{
-                fontSize: 24,
-                fontWeight: 800,
+                fontSize: 22,
+                fontWeight: 400,
                 color: TEXT_COLOR,
                 marginBottom: 4,
               }}
@@ -1299,7 +1419,7 @@ Return ONLY valid JSON, no markdown backticks, no explanation:
               <div
                 key={item.label}
                 style={{
-                  background: "#1C1C1E",
+                  background: "#FFFFFF",
                   borderRadius: 12,
                   padding: "14px 16px",
                   display: "flex",
@@ -1307,16 +1427,16 @@ Return ONLY valid JSON, no markdown backticks, no explanation:
                   alignItems: "flex-start",
                 }}
               >
-                <span style={{ fontSize: 20, marginTop: 2 }}>{item.icon}</span>
+                <span style={{ fontSize: 18, marginTop: 2 }}>{item.icon}</span>
                 <div>
                   <div
                     style={{
-                      fontSize: 12,
+                      fontSize: 14,
                       color: MUTED_COLOR,
                       textTransform: "uppercase",
                       letterSpacing: ".06em",
                       marginBottom: 4,
-                      fontWeight: 600,
+                      fontWeight: 400,
                     }}
                   >
                     {item.label}
@@ -1340,12 +1460,12 @@ Return ONLY valid JSON, no markdown backticks, no explanation:
           >
             <div
               style={{
-                fontSize: 12,
+                fontSize: 14,
                 color: PRIMARY_BLUE,
                 textTransform: "uppercase",
                 letterSpacing: ".06em",
                 marginBottom: 4,
-                fontWeight: 700,
+                fontWeight: 400,
               }}
             >
               💡 Key Insight
@@ -1371,7 +1491,7 @@ Return ONLY valid JSON, no markdown backticks, no explanation:
             onNext(updatedPersonas);
           }}
         >
-          Audit Your Business →
+          View Personas & Journey →
         </GradientButton>
       </div>
     </div>
@@ -1412,20 +1532,20 @@ function StepAudit({ onNext, onBack }) {
       <div style={{ marginBottom: 24 }}>
         <div
           style={{
-            fontSize: 14,
+            fontSize: 15,
             color: PRIMARY_BLUE,
             letterSpacing: ".1em",
             textTransform: "uppercase",
             marginBottom: 8,
-            fontWeight: 600,
+            fontWeight: 400,
           }}
         >
           Step 4 of 5
         </div>
-        <h2 style={{ fontSize: 28, fontWeight: 800, color: TEXT_COLOR, margin: 0 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 400, color: TEXT_COLOR, margin: 0 }}>
           Audit Your Business
         </h2>
-        <p style={{ color: MUTED_COLOR, marginTop: 8, fontSize: 16 }}>
+        <p style={{ color: MUTED_COLOR, marginTop: 8, fontSize: 15 }}>
           Check Yes for everything your business already does well. Be honest.
         </p>
       </div>
@@ -1464,8 +1584,8 @@ function StepAudit({ onNext, onBack }) {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 14,
-              fontWeight: 800,
+              fontSize: 15,
+              fontWeight: 400,
               color: TEXT_COLOR,
             }}
           >
@@ -1473,10 +1593,10 @@ function StepAudit({ onNext, onBack }) {
           </div>
         </div>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: TEXT_COLOR }}>
+          <div style={{ fontSize: 18, fontWeight: 400, color: TEXT_COLOR }}>
             Overall Score
           </div>
-          <div style={{ fontSize: 14, color: MUTED_COLOR }}>
+          <div style={{ fontSize: 15, color: MUTED_COLOR }}>
             {totalYes} of {totalQ} checks passed
           </div>
         </div>
@@ -1487,8 +1607,8 @@ function StepAudit({ onNext, onBack }) {
               borderRadius: 999,
               background: `${scoreColor(totalPct)}20`,
               color: scoreColor(totalPct),
-              fontSize: 13,
-              fontWeight: 700,
+              fontSize: 14,
+              fontWeight: 400,
             }}
           >
             {scoreLabel(totalPct)}
@@ -1512,7 +1632,7 @@ function StepAudit({ onNext, onBack }) {
                 border: `1.5px solid ${activeStage === i ? PRIMARY_BLUE : BORDER_COLOR}`,
                 background: activeStage === i ? `${PRIMARY_BLUE}25` : "transparent",
                 color: activeStage === i ? PRIMARY_BLUE : MUTED_COLOR,
-                fontSize: 14,
+                fontSize: 15,
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
@@ -1524,9 +1644,9 @@ function StepAudit({ onNext, onBack }) {
               {s.icon} {s.label}
               <span
                 style={{
-                  fontSize: 12,
+                  fontSize: 14,
                   color: scoreColor(sc.pct),
-                  fontWeight: 700,
+                  fontWeight: 400,
                 }}
               >
                 {sc.yes}/{sc.total}
@@ -1551,14 +1671,14 @@ function StepAudit({ onNext, onBack }) {
           <div
             style={{
               fontSize: 18,
-              fontWeight: 700,
+              fontWeight: 400,
               color: TEXT_COLOR,
               marginBottom: 4,
             }}
           >
             {stage.icon} {stage.label} Stage
           </div>
-          <div style={{ fontSize: 14, color: MUTED_COLOR, lineHeight: 1.5 }}>{stage.description}</div>
+          <div style={{ fontSize: 15, color: MUTED_COLOR, lineHeight: 1.5 }}>{stage.description}</div>
         </div>
 
         <div>
@@ -1595,9 +1715,9 @@ function StepAudit({ onNext, onBack }) {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: 14,
+                    fontSize: 15,
                     color: "#FFFFFF",
-                    fontWeight: 800,
+                    fontWeight: 400,
                     transition: "all .15s ease-in-out",
                   }}
                 >
@@ -1622,7 +1742,7 @@ function StepAudit({ onNext, onBack }) {
           style={{
             padding: "16px 22px",
             borderTop: `1px solid ${BORDER_COLOR}`,
-            background: "#1C1C1E",
+            background: "#FFFFFF",
           }}
         >
           <div
@@ -1632,17 +1752,17 @@ function StepAudit({ onNext, onBack }) {
               alignItems: "center",
             }}
           >
-            <span style={{ fontSize: 14, color: MUTED_COLOR, fontWeight: 500 }}>
+            <span style={{ fontSize: 15, color: MUTED_COLOR, fontWeight: 400 }}>
               {stage.label} Score: {sc.yes}/{sc.total} ({sc.pct}%)
             </span>
             <span
               style={{
-                fontSize: 13,
+                fontSize: 14,
                 padding: "4px 14px",
                 borderRadius: 999,
                 background: `${scoreColor(sc.pct)}25`,
                 color: scoreColor(sc.pct),
-                fontWeight: 700,
+                fontWeight: 400,
               }}
             >
               {scoreLabel(sc.pct)}
@@ -1703,196 +1823,47 @@ function StepAudit({ onNext, onBack }) {
 // ══════════════════════════════════════════════════════════════
 // STEP 5 — Results
 // ══════════════════════════════════════════════════════════════
-function StepResults({ business, personas, answers, leadId, onRestart, onNavigatePsychology }) {
-  const [aiInsight, setAiInsight] = useState(null);
-  const [loadingAI, setLoadingAI] = useState(true);
+function StepResults({ business, personas, leadId, onRestart, onNavigatePsychology }) {
   const [downloading, setDownloading] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
-  const [emailSending, setEmailSending] = useState(false);
-  const [showAutomations, setShowAutomations] = useState(false);
-
-  // Calculate scores
-  const stageScores = JOURNEY_STAGES.map((s) => {
-    const yes = s.questions.filter((_, i) => answers[`${s.id}_${i}`]).length;
-    return {
-      ...s,
-      yes,
-      total: s.questions.length,
-      pct: Math.round((yes / s.questions.length) * 100),
-    };
-  });
-  const totalYes = stageScores.reduce((a, s) => a + s.yes, 0);
-  const totalQ = stageScores.reduce((a, s) => a + s.total, 0);
-  const totalPct = Math.round((totalYes / totalQ) * 100);
-  const weakest = [...stageScores].sort((a, b) => a.pct - b.pct)[0];
-  const strongest = [...stageScores].sort((a, b) => b.pct - a.pct)[0];
-  const date = new Date().toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
 
   useEffect(() => {
-    generateResults();
-  }, []);
-
-  // ── Generate AI insight ───────────────────────────────────
-  async function generateResults() {
-    setLoadingAI(true);
-
-    const persona = personas?.[0] || {};
-    const updateData = {
-      overallScore: totalPct,
-      weakestStage: weakest.label,
-      strongestStage: strongest.label,
-      stageScores: stageScores.map((s) => ({
-        stage: s.label,
-        pct: s.pct,
-      })),
-      personaName: persona.name || "Unknown",
-      personaArchetype: persona.archetype || "Unknown",
-      completedAt: new Date().toISOString(),
-      business: business || null,
-      personas: personas || null,
-      answers: answers || {},
-    };
-
-    // ── Update persistent storage with scores ──
+    // Save report when opened
     try {
       if (leadId && auth.currentUser) {
-        setDoc(
-          doc(db, "users", auth.currentUser.uid, "audits", leadId),
-          updateData,
-          { merge: true },
-        ).catch((err) => {
-          console.error("Firestore save error (Step 5):", err);
+        import("firebase/firestore").then(({ setDoc, doc }) => {
+          setDoc(
+            doc(db, "users", auth.currentUser.uid, "audits", leadId),
+            {
+              business: business || null,
+              personas: personas || null,
+              completedAt: new Date().toISOString()
+            },
+            { merge: true }
+          ).catch((e) => console.error(e));
         });
       }
-    } catch (storageErr) {
-      console.warn("Storage save failed:", storageErr);
-    }
-
-    try {
-      const scoresSummary = stageScores
-        .map((s) => `${s.label}: ${s.pct}%`)
-        .join(", ");
-      const res = await fetch("/api/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-5-20250929",
-          max_tokens: 1000,
-          messages: [
-            {
-              role: "user",
-              content: `You are a marketing consultant giving personalised advice.
-
-Business Name: ${business.businessName}
-Industry: ${business.industry}
-Location: ${business.location}
-Website: ${business.websiteUrl || "Not provided"}
-Google My Business: ${business.gmbUrl || "Not provided"}
-Social Media: ${business.socialUrl || "Not provided"}
-Additional Notes: ${business.additionalNotes || "None"}
-
-Overall Business Journey Score: ${totalPct}%
-Strongest Stage: ${strongest.label} (${strongest.pct}%)
-Weakest Stage: ${weakest.label} (${weakest.pct}%)
-
-IMPORTANT: Do NOT confuse a stage score with the Overall Business Journey Score. The overall score is exactly ${totalPct}%.
-
-Write a personalised insight report based on their weakest stage and the URLs provided. Return EXACTLY this JSON structure (no markdown borders, just the raw JSON object):
-{
-  "websiteReport": "A critical analysis of their Website Structure, Content, SEO and overall online presence strictly based on the URLs provided. If URLs are weak or missing, call it out.",
-  "keyTakeaways": "A paragraph outlining the biggest gap (weakest stage) and specifically what it is costing them right now.",
-  "nextPriorityStep": "A paragraph stating the single most important thing to fix first and why it will have the biggest impact."
-}`,
-            },
-          ],
-        }),
-      });
-      const data = await res.json();
-      const txt = data.content?.[0]?.text || "";
-      let parsed = null;
-      try {
-        parsed = JSON.parse(txt);
-      } catch (err) {
-        const match = txt.match(/\{[\s\S]*\}/);
-        if (match) {
-          try {
-            parsed = JSON.parse(match[0]);
-          } catch (e) { }
-        }
-      }
-      if (parsed && parsed.websiteReport) {
-        setAiInsight(parsed);
-      } else {
-        setAiInsight(getFallbackInsight());
-      }
     } catch (e) {
-      setAiInsight(getFallbackInsight());
-    } finally {
-      setLoadingAI(false);
+      console.warn("Storage save failed:", e);
     }
-  }
-
-  function getFallbackInsight() {
-    return {
-      websiteReport: `Because we don't have detailed metrics for your links yet, we recommend manually reviewing the user experience on your site and social pages. Ensure your strongest asset (${strongest.label} at ${strongest.pct}%) is visible everywhere.`,
-      keyTakeaways: `Your ${weakest.label} stage at ${weakest.pct}% is where you're losing customers silently. At this stage, potential customers are evaluating whether to trust you — and most are leaving before making contact. Every customer lost here is revenue you never see.`,
-      nextPriorityStep: `Focus all energy on the ${weakest.label} stage first. Even a 20% improvement here can significantly increase the number of customers who reach out — without spending more on ads or marketing.`,
-    };
-  }
+  }, [business, personas, leadId]);
 
   // ── Build report HTML string (used for both download and email) ──
   function buildReportHTML() {
-    const stageRows = stageScores
-      .map(
-        (s) => `
-      <tr>
-        <td style="padding:12px 16px;border-bottom:1px solid #1e1e1e;color:#f5f5f5;font-weight:600;">
-          ${s.icon} ${s.label}
-        </td>
-        <td style="padding:12px 16px;border-bottom:1px solid #1e1e1e;text-align:center;">
-          <span style="color:${scoreColor(s.pct)};font-weight:700;">${s.pct}%</span>
-        </td>
-        <td style="padding:12px 16px;border-bottom:1px solid #1e1e1e;text-align:center;">
-          <span style="color:#aaa;">${s.yes}/${s.total}</span>
-        </td>
-        <td style="padding:12px 16px;border-bottom:1px solid #1e1e1e;text-align:center;">
-          <span style="
-            padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;
-            background:${scoreColor(s.pct)}22;color:${scoreColor(s.pct)};
-          ">${scoreLabel(s.pct)}</span>
-        </td>
-      </tr>
-    `,
-      )
-      .join("");
-
-    const checkedItems = JOURNEY_STAGES.map((s) => {
-      const passed = s.questions.filter((_, i) => answers[`${s.id}_${i}`]);
-      const failed = s.questions.filter((_, i) => !answers[`${s.id}_${i}`]);
-      return `
-        <div style="margin-bottom:24px;">
-          <h3 style="color:${PRIMARY_BLUE};margin:0 0 12px;font-size:15px;">${s.icon} ${s.label} Stage</h3>
-          ${passed.map((q) => `<div style="padding:8px 12px;margin-bottom:6px;background:#1a1a1a;border-radius:8px;border-left:3px solid #22c55e;color:#ccc;font-size:13px;">✓ ${q}</div>`).join("")}
-          ${failed.map((q) => `<div style="padding:8px 12px;margin-bottom:6px;background:#1a1a1a;border-radius:8px;border-left:3px solid #ef4444;color:#777;font-size:13px;">✗ ${q}</div>`).join("")}
-        </div>
-      `;
-    }).join("");
+    const date = new Date().toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
 
     const personasHTML = personas
       .map(
         (p) => `
       <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:16px;margin-bottom:12px;">
-        <div style="color:${PRIMARY_BLUE};font-weight:700;font-size:16px;margin-bottom:2px;">
-          ${p.name} <span style="color:#555;font-size:14px;font-weight:500;">— ${p.archetype}</span>
+        <div style="color:${PRIMARY_BLUE};font-weight: 400;font-size: 15px;margin-bottom:2px;">
+          ${p.name} <span style="color:#555;font-size: 15px;font-weight: 400;">— ${p.archetype}</span>
         </div>
-        <div style="font-size:13px;color:#aaa;">${p.age} · ${p.role}</div>
-        <div style="margin-top:8px;font-size:14px;color:#ccc;line-height:1.5;">"${p.summary}"</div>
+        <div style="font-size: 14px;color:#aaa;">${p.age} · ${p.role}</div>
+        <div style="margin-top:8px;font-size: 15px;color:#ccc;line-height:1.5;">"${p.summary}"</div>
       </div>
     `,
       )
@@ -1913,13 +1884,13 @@ Write a personalised insight report based on their weakest stage and the URLs pr
             const color = colors[step.stage] || "#aaa";
             return `
           <div style="padding-left:12px;border-left:2px solid ${color};margin-bottom:16px;">
-            <div style="font-size:13px;font-weight:800;color:${color};text-transform:uppercase;letter-spacing:.05em;">${step.stage}</div>
-            <div style="color:#ccc;margin-top:6px;font-size:14px;line-height:1.5;">
-              <div style="margin-bottom:4px;"><strong style="color:#fff;">Intent:</strong> ${step.intent}</div>
-              <div style="margin-bottom:4px;"><strong style="color:#fff;">Behaviour:</strong> ${step.behaviour}</div>
-              <div style="margin-bottom:4px;"><strong style="color:#fff;">Pain Point:</strong> ${step.painPoint}</div>
-              <div style="margin-bottom:4px;"><strong style="color:#fff;">Touchpoints:</strong> ${step.touchpoint}</div>
-              <div style="margin-top:8px;color:${PRIMARY_BLUE};font-weight:600;">💡 Insight: ${step.insight}</div>
+            <div style="font-size: 14px;font-weight: 400;color:${color};text-transform:uppercase;letter-spacing:.05em;">${step.stage}</div>
+            <div style="color:#ccc;margin-top:6px;font-size: 15px;line-height:1.5;">
+              <div style="margin-bottom:4px;"><span style="color:#fff;">Intent:</span> ${step.intent}</div>
+              <div style="margin-bottom:4px;"><span style="color:#fff;">Behaviour:</span> ${step.behaviour}</div>
+              <div style="margin-bottom:4px;"><span style="color:#fff;">Pain Point:</span> ${step.painPoint}</div>
+              <div style="margin-bottom:4px;"><span style="color:#fff;">Touchpoints:</span> ${step.touchpoint}</div>
+              <div style="margin-top:8px;color:${PRIMARY_BLUE};font-weight: 400;">💡 Insight: ${step.insight}</div>
             </div>
           </div>
         `;
@@ -1928,7 +1899,7 @@ Write a personalised insight report based on their weakest stage and the URLs pr
 
         return `
         <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:20px;margin-bottom:16px;">
-          <div style="color:#f5f5f5;font-weight:800;font-size:16px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #1e1e1e;">${p.name}'s Journey</div>
+          <div style="color:#f5f5f5;font-weight: 400;font-size: 15px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #1e1e1e;">${p.name}'s Journey</div>
           <div>${stepsHTML}</div>
         </div>
       `;
@@ -1940,7 +1911,7 @@ Write a personalised insight report based on their weakest stage and the URLs pr
         <head>
           <meta charset="UTF-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <title>Customer Journey Audit Report — ${business.industry}</title>
+          <title>Customer Personas & Journey Report — ${business.industry}</title>
           <style>
             * {margin:0; padding:0; box-sizing:border-box; }
             body {background:#0a0a0a; color:#f5f5f5; font-family:'Segoe UI',sans-serif; padding:40px 24px; }
@@ -1952,48 +1923,48 @@ Write a personalised insight report based on their weakest stage and the URLs pr
 
             <!-- Header -->
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid #1e1e1e;">
-              <div style="width:40px;height:40px;border-radius:10px;background:${PRIMARY_BLUE};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#000;">H</div>
+              <div style="width:40px;height:40px;border-radius:10px;background:${PRIMARY_BLUE};display:flex;align-items:center;justify-content:center;font-size: 18px;font-weight: 400;color:#000;">H</div>
               <div>
-                <div style="font-size:16px;font-weight:700;color:#f5f5f5;">PeoplePlex</div>
-                <div style="font-size:12px;color:#555;">peopleplex.in · Understand Your Customers</div>
+                <div style="font-size: 15px;font-weight: 400;color:#f5f5f5;">PeoplePlex</div>
+                <div style="font-size: 14px;color:#555;">peopleplex.in · Understand Your Customers</div>
               </div>
               <div style="margin-left:auto;text-align:right;">
-                <div style="font-size:12px;color:#555;">Generated on</div>
-                <div style="font-size:13px;color:#aaa;">${date}</div>
+                <div style="font-size: 14px;color:#555;">Generated on</div>
+                <div style="font-size: 14px;color:#aaa;">${date}</div>
               </div>
             </div>
 
             <!-- Title -->
             <div style="margin-bottom:32px;">
-              <div style="font-size:12px;color:${PRIMARY_BLUE};letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;">Customer Journey Audit Report</div>
-              <h1 style="font-size:28px;font-weight:900;color:#f5f5f5;line-height:1.2;margin-bottom:8px;">
-                Customer Journey — How Well Is Your Business Performing?
+              <div style="font-size: 14px;color:${PRIMARY_BLUE};letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;">Customer Personas Report</div>
+              <h1 style="font-size: 22px;font-weight: 400;color:#f5f5f5;line-height:1.2;margin-bottom:8px;">
+                Customer Personas & Mapped Journeys
               </h1>
-              <p style="color:#777;font-size:14px;">Prepared for: <strong style="color:#aaa;">${business.businessName || business.industry}</strong> · ${business.location}</p>
+              <p style="color:#777;font-size: 15px;">Prepared for: <span style="color:#aaa;">${business.businessName || business.industry}</span> · ${business.location}</p>
             </div>
 
             <!-- Business Info -->
             <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:20px;margin-bottom:24px;">
-              <div style="font-size:12px;color:${PRIMARY_BLUE};text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Business Details & Links</div>
+              <div style="font-size: 14px;color:${PRIMARY_BLUE};text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Business Details & Links</div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                <div style="grid-column:1/-1;"><div style="font-size:11px;color:#555;margin-bottom:4px;">BUSINESS NAME</div><div style="color:#f5f5f5;font-size:14px;">${business.businessName || "Not provided"}</div></div>
-                <div><div style="font-size:11px;color:#555;margin-bottom:4px;">INDUSTRY</div><div style="color:#f5f5f5;font-size:14px;">${business.industry}</div></div>
-                <div><div style="font-size:11px;color:#555;margin-bottom:4px;">LOCATION</div><div style="color:#f5f5f5;font-size:14px;">${business.location}</div></div>
+                <div style="grid-column:1/-1;"><div style="font-size: 14px;color:#555;margin-bottom:4px;">BUSINESS NAME</div><div style="color:#f5f5f5;font-size: 15px;">${business.businessName || "Not provided"}</div></div>
+                <div><div style="font-size: 14px;color:#555;margin-bottom:4px;">INDUSTRY</div><div style="color:#f5f5f5;font-size: 15px;">${business.industry}</div></div>
+                <div><div style="font-size: 14px;color:#555;margin-bottom:4px;">LOCATION</div><div style="color:#f5f5f5;font-size: 15px;">${business.location}</div></div>
                 
-                ${business.websiteUrl ? `<div><div style="font-size:11px;color:#555;margin-bottom:4px;">WEBSITE</div><div style="font-size:14px;"><a href="${business.websiteUrl}" target="_blank" style="color:${PRIMARY_BLUE};text-decoration:none;">${business.websiteUrl}</a></div></div>` : ""}
-                ${business.gmbUrl ? `<div><div style="font-size:11px;color:#555;margin-bottom:4px;">GOOGLE GMB</div><div style="font-size:14px;"><a href="${business.gmbUrl}" target="_blank" style="color:${PRIMARY_BLUE};text-decoration:none;">View Maps</a></div></div>` : ""}
-                ${business.socialUrl ? `<div><div style="font-size:11px;color:#555;margin-bottom:4px;">SOCIAL MEDIA</div><div style="font-size:14px;"><a href="${business.socialUrl}" target="_blank" style="color:${PRIMARY_BLUE};text-decoration:none;">View Profile</a></div></div>` : ""}
+                ${business.websiteUrl ? `<div><div style="font-size: 14px;color:#555;margin-bottom:4px;">WEBSITE</div><div style="font-size: 15px;"><a href="${business.websiteUrl}" target="_blank" style="color:${PRIMARY_BLUE};text-decoration:none;">${business.websiteUrl}</a></div></div>` : ""}
+                ${business.gmbUrl ? `<div><div style="font-size: 14px;color:#555;margin-bottom:4px;">GOOGLE GMB</div><div style="font-size: 15px;"><a href="${business.gmbUrl}" target="_blank" style="color:${PRIMARY_BLUE};text-decoration:none;">View Maps</a></div></div>` : ""}
+                ${business.socialUrl ? `<div><div style="font-size: 14px;color:#555;margin-bottom:4px;">SOCIAL MEDIA</div><div style="font-size: 15px;"><a href="${business.socialUrl}" target="_blank" style="color:${PRIMARY_BLUE};text-decoration:none;">View Profile</a></div></div>` : ""}
 
-                ${business.additionalNotes ? `<div style="grid-column:1/-1;"><div style="font-size:11px;color:#555;margin-bottom:4px;">ADDITIONAL NOTES</div><div style="color:#f5f5f5;font-size:14px;line-height:1.5;">${business.additionalNotes}</div></div>` : ""}
-                <div style="grid-column:1/-1;"><div style="font-size:11px;color:#555;margin-bottom:4px;">CUSTOMER PERSONAS AUDITED</div><div style="color:#f5f5f5;font-size:14px;">${personas.map((p) => p.name).join(", ")}</div></div>
+                ${business.additionalNotes ? `<div style="grid-column:1/-1;"><div style="font-size: 14px;color:#555;margin-bottom:4px;">ADDITIONAL NOTES</div><div style="color:#f5f5f5;font-size: 15px;line-height:1.5;">${business.additionalNotes}</div></div>` : ""}
+                <div style="grid-column:1/-1;"><div style="font-size: 14px;color:#555;margin-bottom:4px;">CUSTOMER PERSONAS AUDITED</div><div style="color:#f5f5f5;font-size: 15px;">${personas.map((p) => p.name).join(", ")}</div></div>
               </div>
             </div>
 
             <!-- Overall Score -->
             <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:28px;margin-bottom:24px;text-align:center;">
-              <div style="font-size:72px;font-weight:900;color:${scoreColor(totalPct)};line-height:1;">${totalPct}%</div>
-              <div style="font-size:20px;font-weight:700;color:#f5f5f5;margin-top:8px;">${scoreLabel(totalPct)} — ${totalYes}/${totalQ} checks passed</div>
-              <div style="font-size:13px;color:#555;margin-top:6px;">
+              <div style="font-size: 72px;font-weight: 400;color:${scoreColor(totalPct)};line-height:1;">${totalPct}%</div>
+              <div style="font-size: 18px;font-weight: 400;color:#f5f5f5;margin-top:8px;">${scoreLabel(totalPct)} — ${totalYes}/${totalQ} checks passed</div>
+              <div style="font-size: 14px;color:#555;margin-top:6px;">
                 Weakest: <span style="color:#ef4444;">${weakest.label} (${weakest.pct}%)</span> &nbsp;·&nbsp;
                 Strongest: <span style="color:#22c55e;">${strongest.label} (${strongest.pct}%)</span>
               </div>
@@ -2002,89 +1973,39 @@ Write a personalised insight report based on their weakest stage and the URLs pr
             <!-- Stage Scores Table -->
             <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;overflow:hidden;margin-bottom:24px;">
               <div style="padding:16px 20px;border-bottom:1px solid #1e1e1e;">
-                <div style="font-size:13px;font-weight:700;color:#f5f5f5;">Stage-by-Stage Breakdown</div>
+                <div style="font-size: 14px;font-weight: 400;color:#f5f5f5;">Stage-by-Stage Breakdown</div>
               </div>
               <table style="width:100%;border-collapse:collapse;">
                 <thead>
-                  <tr style="background:#0d0d0d;">
-                    <th style="padding:10px 16px;text-align:left;font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.06em;">Stage</th>
-                    <th style="padding:10px 16px;text-align:center;font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.06em;">Score</th>
-                    <th style="padding:10px 16px;text-align:center;font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.06em;">Passed</th>
-                    <th style="padding:10px 16px;text-align:center;font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.06em;">Status</th>
-                  </tr>
-                </thead>
-                <tbody>${stageRows}</tbody>
-              </table>
-            </div>
-
-            <!-- AI Insight -->
-            ${!aiInsight
-        ? ""
-        : typeof aiInsight === "string"
-          ? `
-              <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:24px;">
-                <div style="font-size:13px;font-weight:700;color:${PRIMARY_BLUE};margin-bottom:14px;">💡 Personalised Gap Analysis</div>
-                <p style="font-size:14px;color:#ccc;line-height:1.8;">${aiInsight.replace(/\n\n/g, '</p><p style="font-size:14px;color:#ccc;line-height:1.8;margin-top:12px;">')}</p>
-              </div>`
-          : `
-              <div style="margin-bottom:24px;">
-                <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:16px;">
-                  <div style="font-size:13px;font-weight:700;color:${PRIMARY_BLUE};margin-bottom:10px;">🌐 Website & Online Presence Report</div>
-                  <p style="font-size:14px;color:#ccc;line-height:1.8;margin:0;">${aiInsight.websiteReport}</p>
-                </div>
-                <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:16px;">
-                  <div style="font-size:13px;font-weight:700;color:${PRIMARY_BLUE};margin-bottom:10px;">💡 Key Takeaways</div>
-                  <p style="font-size:14px;color:#ccc;line-height:1.8;margin:0;">${aiInsight.keyTakeaways}</p>
-                </div>
-                <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;">
-                  <div style="font-size:13px;font-weight:700;color:${PRIMARY_BLUE};margin-bottom:10px;">🚀 Next Priority Step</div>
-                  <p style="font-size:14px;color:#ccc;line-height:1.8;margin:0;">${aiInsight.nextPriorityStep}</p>
-                </div>
-              </div>`
-      }
-
-            <!-- Detailed Checklist -->
-            <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:24px;">
-              <div style="font-size:13px;font-weight:700;color:#f5f5f5;margin-bottom:20px;">Detailed Audit Checklist</div>
-              ${checkedItems}
-            </div>
-
-            <!-- CTA -->
-            <div style="background:${PRIMARY_BLUE}15;border:1px solid ${PRIMARY_BLUE}40;border-radius:14px;padding:28px;text-align:center;margin-bottom:24px;">
-              <div style="font-size:20px;font-weight:800;color:#f5f5f5;margin-bottom:8px;">Ready to Fix Your Biggest Gap?</div>
-              <p style="font-size:14px;color:#777;margin-bottom:20px;line-height:1.6;">
-                Book a free 30-minute Enrollment System Audit Call.<br />
-                You bring this report. I bring the analysis.
-              </p>
-              <a href="${BOOKING_LINK}" style="
-      display:inline-block;padding:14px 28px;background:${PRIMARY_BLUE};
-      color:#000;font-weight:700;border-radius:10px;text-decoration:none;font-size:15px;
-    ">Book Audit Call →</a>
+                <div style="grid-column:1/-1;"><div style="font-size: 14px;color:#555;margin-bottom:4px;">BUSINESS NAME</div><div style="color:#f5f5f5;font-size: 15px;">${business.businessName || "Not provided"}</div></div>
+                <div><div style="font-size: 14px;color:#555;margin-bottom:4px;">INDUSTRY</div><div style="color:#f5f5f5;font-size: 15px;">${business.industry}</div></div>
+                <div><div style="font-size: 14px;color:#555;margin-bottom:4px;">TIER</div><div style="color:#f5f5f5;font-size: 15px;">${business.pricingTier.label}</div></div>
+              </div>
             </div>
 
             <!-- Personas -->
             <div style="margin-bottom:24px;">
-              <h3 style="color:#f5f5f5;font-size:18px;margin-bottom:16px;">Generated Personas</h3>
+              <h3 style="color:#f5f5f5;font-size: 18px;margin-bottom:16px;">Generated Personas</h3>
               ${personasHTML}
             </div>
 
             <!-- Mapped Journeys -->
             <div style="margin-bottom:24px;">
-              <h3 style="color:#f5f5f5;font-size:18px;margin-bottom:16px;">Mapped Customer Journeys</h3>
+              <h3 style="color:#f5f5f5;font-size: 18px;margin-bottom:16px;">Mapped Customer Journeys</h3>
               ${mappedJourneysHTML}
             </div>
 
             <!-- Viral Marketing CTA -->
             <div style="margin-top:40px;padding-top:24px;border-top:1px solid #1e1e1e;text-align:center;">
-              <div style="font-size:18px;font-weight:800;color:#f5f5f5;margin-bottom:8px;">Want to uncover the hidden gaps in your own business?</div>
-              <p style="font-size:13px;color:#777;margin-bottom:16px;line-height:1.5;">
-                Get a free, AI-generated Customer Journey Audit designed specifically for your industry. Find out exactly where you're losing money and the quickest way to fix it.
+              <div style="font-size: 18px;font-weight: 400;color:#f5f5f5;margin-bottom:8px;">Want to uncover the hidden gaps in your own business?</div>
+              <p style="font-size: 14px;color:#777;margin-bottom:16px;line-height:1.5;">
+                Get a free, AI-generated Customer Personas & Journey map designed specifically for your industry. Find out exactly where you're losing money and the quickest way to fix it.
               </p>
               <a href="${window.location.origin}" style="
       display:inline-block;padding:12px 24px;background:transparent;border:2px solid ${PRIMARY_BLUE};
-      color:${PRIMARY_BLUE};font-weight:700;border-radius:10px;text-decoration:none;font-size:14px;
-    ">Take Audit For Your Business →</a>
-              <div style="margin-top:24px;font-size:13px;color:#555;">
+      color:${PRIMARY_BLUE};font-weight: 400;border-radius:10px;text-decoration:none;font-size: 15px;
+    ">Generate Personas For Your Business →</a>
+              <div style="margin-top:24px;font-size: 14px;color:#555;">
                 peopleplex.in · Powered by PeoplePlex
               </div>
             </div>
@@ -2117,38 +2038,25 @@ Write a personalised insight report based on their weakest stage and the URLs pr
     }
   }
 
-  // Removed Email functionality directly in-app since we no longer collect it.
-
-  if (showAutomations) {
-    return (
-      <AutomationRecommendations
-        audit={{
-          stageScores: stageScores.map((s) => ({ stage: s.label, pct: s.pct })),
-        }}
-        onBack={() => setShowAutomations(false)}
-      />
-    );
-  }
-
   return (
     <div style={{ paddingBottom: 60 }}>
       <div style={{ marginBottom: 24 }}>
         <div
           style={{
-            fontSize: 14,
+            fontSize: 15,
             color: PRIMARY_BLUE,
             letterSpacing: ".1em",
             textTransform: "uppercase",
             marginBottom: 8,
-            fontWeight: 600,
+            fontWeight: 400,
           }}
         >
           Your Completed Report
         </div>
-        <h2 style={{ fontSize: 28, fontWeight: 800, color: TEXT_COLOR, margin: 0 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 400, color: TEXT_COLOR, margin: 0 }}>
           Customer Journey Audit
         </h2>
-        <p style={{ color: MUTED_COLOR, marginTop: 8, fontSize: 16 }}>
+        <p style={{ color: MUTED_COLOR, marginTop: 8, fontSize: 15 }}>
           Comprehensive analysis of your current business performance.
         </p>
       </div>
@@ -2164,8 +2072,8 @@ Write a personalised insight report based on their weakest stage and the URLs pr
       >
         <div
           style={{
-            fontSize: 14,
-            fontWeight: 700,
+            fontSize: 15,
+            fontWeight: 400,
             color: MUTED_COLOR,
             textTransform: "uppercase",
             marginBottom: 16,
@@ -2183,13 +2091,13 @@ Write a personalised insight report based on their weakest stage and the URLs pr
           }}
         >
           <div>
-            <span style={{ color: MUTED_COLOR, fontWeight: 500 }}>Industry:</span> {business.industry}
+            <span style={{ color: MUTED_COLOR, fontWeight: 400 }}>Industry:</span> {business.industry}
           </div>
           <div>
-            <span style={{ color: MUTED_COLOR, fontWeight: 500 }}>Location:</span> {business.location}
+            <span style={{ color: MUTED_COLOR, fontWeight: 400 }}>Location:</span> {business.location}
           </div>
           <div>
-            <span style={{ color: MUTED_COLOR, fontWeight: 500 }}>Market Tier:</span>{" "}
+            <span style={{ color: MUTED_COLOR, fontWeight: 400 }}>Market Tier:</span>{" "}
             {business.pricingTier.label}
           </div>
           <div style={{ marginTop: 8, color: TEXT_COLOR, lineHeight: 1.6, fontStyle: 'italic' }}>
@@ -2201,8 +2109,8 @@ Write a personalised insight report based on their weakest stage and the URLs pr
       <div style={{ marginBottom: 24 }}>
         <div
           style={{
-            fontSize: 20,
-            fontWeight: 800,
+            fontSize: 18,
+            fontWeight: 400,
             color: TEXT_COLOR,
             marginBottom: 16,
           }}
@@ -2223,17 +2131,17 @@ Write a personalised insight report based on their weakest stage and the URLs pr
               <div
                 style={{
                   color: PRIMARY_BLUE,
-                  fontWeight: 700,
-                  fontSize: 17,
+                  fontWeight: 400,
+                  fontSize: 18,
                   marginBottom: 4,
                 }}
               >
                 {p.name}{" "}
-                <span style={{ color: MUTED_COLOR, fontSize: 15, fontWeight: 500 }}>
+                <span style={{ color: MUTED_COLOR, fontSize: 15, fontWeight: 400 }}>
                   — {p.archetype}
                 </span>
               </div>
-              <div style={{ fontSize: 14, color: "#aaa" }}>
+              <div style={{ fontSize: 15, color: MUTED_COLOR }}>
                 {p.age} · {p.role}
               </div>
               <div style={{ marginTop: 10, fontSize: 15, lineHeight: 1.6 }}>
@@ -2248,8 +2156,8 @@ Write a personalised insight report based on their weakest stage and the URLs pr
       <div style={{ marginBottom: 24 }}>
         <div
           style={{
-            fontSize: 20,
-            fontWeight: 800,
+            fontSize: 18,
+            fontWeight: 400,
             color: TEXT_COLOR,
             marginBottom: 16,
           }}
@@ -2270,7 +2178,7 @@ Write a personalised insight report based on their weakest stage and the URLs pr
             <div
               style={{
                 color: TEXT_COLOR,
-                fontWeight: 800,
+                fontWeight: 400,
                 fontSize: 18,
                 marginBottom: 16,
                 paddingBottom: 12,
@@ -2300,8 +2208,8 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                     >
                       <div
                         style={{
-                          fontSize: 14,
-                          fontWeight: 800,
+                          fontSize: 15,
+                          fontWeight: 400,
                           color: color,
                           textTransform: "uppercase",
                           letterSpacing: ".05em",
@@ -2312,35 +2220,35 @@ Write a personalised insight report based on their weakest stage and the URLs pr
                       <div
                         style={{
                           fontSize: 15,
-                          color: "#ccc",
+                          color: MUTED_COLOR,
                           marginTop: 6,
                           lineHeight: 1.6,
                           paddingBottom: 12,
                         }}
                       >
                         <div style={{ marginBottom: 6 }}>
-                          <strong style={{ color: "#fff" }}>Intent:</strong>{" "}
-                          {step.intent}
+                          <span style={{ color: TEXT_COLOR }}>Intent:</span>{" "}
+                          <span style={{ color: MUTED_COLOR }}>{step.intent}</span>
                         </div>
                         <div style={{ marginBottom: 6 }}>
-                          <strong style={{ color: "#fff" }}>Behaviour:</strong>{" "}
-                          {step.behaviour}
+                          <span style={{ color: TEXT_COLOR }}>Behaviour:</span>{" "}
+                          <span style={{ color: MUTED_COLOR }}>{step.behaviour}</span>
                         </div>
                         <div style={{ marginBottom: 6 }}>
-                          <strong style={{ color: "#fff" }}>Pain Point:</strong>{" "}
-                          {step.painPoint}
+                          <span style={{ color: TEXT_COLOR }}>Pain Point:</span>{" "}
+                          <span style={{ color: MUTED_COLOR }}>{step.painPoint}</span>
                         </div>
                         <div style={{ marginBottom: 4 }}>
-                          <strong style={{ color: "#fff" }}>
+                          <span style={{ color: TEXT_COLOR }}>
                             Touchpoints:
-                          </strong>{" "}
-                          {step.touchpoint}
+                          </span>{" "}
+                          <span style={{ color: MUTED_COLOR }}>{step.touchpoint}</span>
                         </div>
                         <div
                           style={{
                             marginTop: 8,
                             color: PRIMARY_BLUE,
-                            fontWeight: 600,
+                            fontWeight: 400,
                           }}
                         >
                           💡 Insight: {step.insight}
@@ -2354,400 +2262,147 @@ Write a personalised insight report based on their weakest stage and the URLs pr
         ))}
       </div>
 
-      {/* Big score */}
+
+      {/* Report Actions */}
       <div
         style={{
           background: CARD_BACKGROUND,
           border: `1px solid ${BORDER_COLOR}`,
-          borderRadius: 20,
-          padding: 28,
+          borderRadius: 16,
+          padding: 24,
           marginBottom: 16,
-          textAlign: "center",
         }}
       >
         <div
           style={{
-            fontSize: 72,
-            fontWeight: 900,
-            color: scoreColor(totalPct),
-            lineHeight: 1,
+            fontSize: 15,
+            fontWeight: 400,
+            color: TEXT_COLOR,
+            marginBottom: 8,
           }}
         >
-          {totalPct}%
+          📄 Your Full Report is Ready
         </div>
-        <div
-          style={{ fontSize: 20, fontWeight: 700, color: TEXT_COLOR, marginTop: 12 }}
+        <p
+          style={{
+            fontSize: 15,
+            color: MUTED_COLOR,
+            marginBottom: 16,
+            lineHeight: 1.6,
+          }}
         >
-          {scoreLabel(totalPct)} — {totalYes}/{totalQ} checks passed
+          Includes your complete persona breakdown and mapped journeys. Save it or send it to your inbox.
+        </p>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          {/* Download Button */}
+          <button
+            onClick={handleShare}
+            disabled={downloading}
+            style={{
+              flex: 1,
+              minWidth: 140,
+              padding: "14px 20px",
+              borderRadius: 12,
+              border: `1.5px solid ${PRIMARY_BLUE}`,
+              background: "transparent",
+              color: PRIMARY_BLUE,
+              fontSize: 15,
+              fontWeight: 400,
+              cursor: downloading ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              transition: "all .2s",
+            }}
+          >
+            {downloading ? "⏳ Generating Link…" : "🔗 Share Report URL"}
+          </button>
         </div>
-        <div style={{ fontSize: 14, color: MUTED_COLOR, marginTop: 6 }}>
-          Weakest: <span style={{ color: "#FF3B30", fontWeight: '600' }}>{weakest.label}</span>
-          {" · "}
-          Strongest: <span style={{ color: "#34C759", fontWeight: '600' }}>{strongest.label}</span>
+
+        {/* Instruction note */}
+        <div
+          style={{
+            marginTop: 14,
+            padding: "12px 16px",
+            background: "#FFFFFF",
+            borderRadius: 10,
+            fontSize: 14,
+            color: MUTED_COLOR,
+            lineHeight: 1.6,
+          }}
+        >
+          💡 <span style={{ color: TEXT_COLOR }}>Share Report URL</span>{" "}
+          generates a unique, public link you can instantly send to your
+          team or stakeholders so they can view the full breakdown.
         </div>
       </div>
 
-      {/* Stage bars */}
+      {/* CTA */}
       <div
         style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
-          marginBottom: 24,
+          background: `${PRIMARY_BLUE}15`,
+          border: `1px solid ${PRIMARY_BLUE}40`,
+          borderRadius: 20,
+          padding: 28,
         }}
       >
-        {stageScores.map((s) => (
-          <div
-            key={s.id}
-            style={{
-              background: CARD_BACKGROUND,
-              border: `1px solid ${BORDER_COLOR}`,
-              borderRadius: 14,
-              padding: "16px 20px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: 10,
-                alignItems: 'center',
-              }}
-            >
-              <span style={{ fontSize: 16, fontWeight: 600, color: TEXT_COLOR }}>
-                {s.icon} {s.label}
-              </span>
-              <span
-                style={{
-                  fontSize: 14,
-                  color: scoreColor(s.pct),
-                  fontWeight: 700,
-                }}
-              >
-                {s.yes}/{s.total} · {s.pct}%
-              </span>
-            </div>
-            <div style={{ height: 8, background: BORDER_COLOR, borderRadius: 999, overflow: 'hidden' }}>
-              <div
-                style={{
-                  height: "100%",
-                  borderRadius: 999,
-                  width: `${s.pct}%`,
-                  background: `linear-gradient(90deg, ${scoreColor(s.pct)}, ${scoreColor(s.pct)}99)`,
-                  transition: "width .6s ease-in-out",
-                }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {loadingAI ? (
-        <Spinner message="Generating your personalised gap report…" />
-      ) : (
-        <div>
-          {/* AI Insight Card */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-              marginBottom: 16,
-            }}
-          >
-            {typeof aiInsight === "string" ? (
-              <div
-                style={{
-                  background: CARD_BACKGROUND,
-                  border: `1px solid ${BORDER_COLOR}`,
-                  borderRadius: 16,
-                  padding: 24,
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 700,
-                    color: PRIMARY_BLUE,
-                    marginBottom: 14,
-                  }}
-                >
-                  💡 Personalised Gap Analysis
-                </div>
-                {aiInsight.split("\n\n").map((para, i) => (
-                  <p
-                    key={i}
-                    style={{
-                      fontSize: 15,
-                      color: MUTED_COLOR,
-                      lineHeight: 1.8,
-                      margin: i > 0 ? "12px 0 0" : 0,
-                    }}
-                  >
-                    {para}
-                  </p>
-                ))}
-              </div>
-            ) : (
-              <>
-                <div
-                  style={{
-                    background: CARD_BACKGROUND,
-                    border: `1px solid ${BORDER_COLOR}`,
-                    borderRadius: 16,
-                    padding: 24,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 16,
-                      fontWeight: 700,
-                      color: PRIMARY_BLUE,
-                      marginBottom: 10,
-                    }}
-                  >
-                    🌐 Website & Online Presence Report
-                  </div>
-                  <p
-                    style={{
-                      fontSize: 15,
-                      color: MUTED_COLOR,
-                      lineHeight: 1.8,
-                      margin: 0,
-                    }}
-                  >
-                    {aiInsight?.websiteReport}
-                  </p>
-                </div>
-                <div
-                  style={{
-                    background: CARD_BACKGROUND,
-                    border: `1px solid ${BORDER_COLOR}`,
-                    borderRadius: 16,
-                    padding: 24,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 16,
-                      fontWeight: 700,
-                      color: PRIMARY_BLUE,
-                      marginBottom: 10,
-                    }}
-                  >
-                    💡 Key Takeaways
-                  </div>
-                  <p
-                    style={{
-                      fontSize: 15,
-                      color: MUTED_COLOR,
-                      lineHeight: 1.8,
-                      margin: 0,
-                    }}
-                  >
-                    {aiInsight?.keyTakeaways}
-                  </p>
-                </div>
-                <div
-                  style={{
-                    background: CARD_BACKGROUND,
-                    border: `1px solid ${BORDER_COLOR}`,
-                    borderRadius: 16,
-                    padding: 24,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 16,
-                      fontWeight: 700,
-                      color: PRIMARY_BLUE,
-                      marginBottom: 10,
-                    }}
-                  >
-                    🚀 Next Priority Step
-                  </div>
-                  <p
-                    style={{
-                      fontSize: 15,
-                      color: MUTED_COLOR,
-                      lineHeight: 1.8,
-                      margin: 0,
-                    }}
-                  >
-                    {aiInsight?.nextPriorityStep}
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Report Actions */}
-          <div
-            style={{
-              background: CARD_BACKGROUND,
-              border: `1px solid ${BORDER_COLOR}`,
-              borderRadius: 16,
-              padding: 24,
-              marginBottom: 16,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 15,
-                fontWeight: 700,
-                color: TEXT_COLOR,
-                marginBottom: 8,
-              }}
-            >
-              📄 Your Full Report is Ready
-            </div>
-            <p
-              style={{
-                fontSize: 14,
-                color: MUTED_COLOR,
-                marginBottom: 16,
-                lineHeight: 1.6,
-              }}
-            >
-              Includes your complete checklist, stage breakdown, and
-              personalised insights. Save it or send it to your inbox.
-            </p>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              {/* Download Button */}
-              <button
-                onClick={handleShare}
-                disabled={downloading}
-                style={{
-                  flex: 1,
-                  minWidth: 140,
-                  padding: "14px 20px",
-                  borderRadius: 12,
-                  border: `1.5px solid ${PRIMARY_BLUE}`,
-                  background: "transparent",
-                  color: PRIMARY_BLUE,
-                  fontSize: 15,
-                  fontWeight: 700,
-                  cursor: downloading ? "not-allowed" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                  transition: "all .2s",
-                }}
-              >
-                {downloading ? "⏳ Generating Link…" : "🔗 Share Report URL"}
-              </button>
-            </div>
-
-            {/* Instruction note */}
-            <div
-              style={{
-                marginTop: 14,
-                padding: "12px 16px",
-                background: "#1C1C1E",
-                borderRadius: 10,
-                fontSize: 13,
-                color: MUTED_COLOR,
-                lineHeight: 1.6,
-              }}
-            >
-              💡 <strong style={{ color: TEXT_COLOR }}>Share Report URL</strong>{" "}
-              generates a unique, public link you can instantly send to your
-              team or stakeholders so they can view the full breakdown.
-            </div>
-          </div>
-
-          {/* Dual CTA */}
-          <div
-            style={{
-              background: `${PRIMARY_BLUE}15`,
-              border: `1px solid ${PRIMARY_BLUE}40`,
-              borderRadius: 20,
-              padding: 28,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 22,
-                fontWeight: 800,
-                color: TEXT_COLOR,
-                marginBottom: 8,
-              }}
-            >
-              Ready to Fix Your Biggest Gap?
-            </div>
-            <p
-              style={{
-                fontSize: 15,
-                color: MUTED_COLOR,
-                marginBottom: 24,
-                lineHeight: 1.7,
-              }}
-            >
-              Your{" "}
-              <span style={{ color: "#FF3B30", fontWeight: 700 }}>
-                {weakest.label}
-              </span>{" "}
-              stage at{" "}
-              <strong style={{ color: "#FF3B30" }}>{weakest.pct}%</strong> is
-              costing you customers right now. Book a call — you bring this
-              report, I bring the analysis.
-            </p>
-
-            {/* TWO CTAs */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {/* View Automations */}
-              <GradientButton
-                onClick={() => setShowAutomations(true)}
-              >
-                ⚙️ View Automation Recommendations
-              </GradientButton>
-
-              {/* Primary: Schedule Call */}
-              <GradientButton
-                secondary
-                onClick={() => window.open(BOOKING_LINK, "_blank")}
-              >
-                📞 Book Free Audit Call →
-              </GradientButton>
-
-              {/* Lead to Psychology Audit */}
-              <GradientButton
-                onClick={onNavigatePsychology}
-              >
-                🧠 Launch Customer Psychology AI →
-              </GradientButton>
-
-
-              {/* Secondary: Share Report */}
-              <GradientButton
-                secondary
-                onClick={handleShare}
-                disabled={downloading}
-              >
-                {downloading ? "⏳ Generating..." : "🔗 Share Report URL"}
-              </GradientButton>
-            </div>
-
-            <div style={{ marginTop: 20, textAlign: "center" }}>
-              <button
-                onClick={onRestart}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: MUTED_COLOR,
-                  fontSize: 14,
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                }}
-              >
-                Start a new audit
-              </button>
-            </div>
-          </div>
+        <div
+          style={{
+            fontSize: 22,
+            fontWeight: 400,
+            color: TEXT_COLOR,
+            marginBottom: 8,
+          }}
+        >
+          Ready for deeper psychological triggers?
         </div>
-      )
-      }
+        <p
+          style={{
+            fontSize: 15,
+            color: MUTED_COLOR,
+            marginBottom: 24,
+            lineHeight: 1.7,
+          }}
+        >
+          Now that you have your foundational personas, use our Psychology Tool to dig into their deepest motivations, pain points, and buyer logic.
+        </p>
+
+        {/* TWO CTAs */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {/* Lead to Psychology Audit */}
+          <GradientButton
+            onClick={onNavigatePsychology}
+          >
+            🧠 Launch Customer Psychology AI →
+          </GradientButton>
+
+          {/* Secondary: Share Report */}
+          <GradientButton
+            secondary
+            onClick={handleShare}
+            disabled={downloading}
+          >
+            {downloading ? "⏳ Generating..." : "🔗 Share Report URL"}
+          </GradientButton>
+        </div>
+
+        <div style={{ marginTop: 20, textAlign: "center" }}>
+          <button
+            onClick={onRestart}
+            style={{
+              background: "none",
+              border: "none",
+              color: MUTED_COLOR,
+              fontSize: 15,
+              cursor: "pointer",
+              textDecoration: "underline",
+            }}
+          >
+            Start a new analysis
+          </button>
+        </div>
+      </div>
     </div >
   );
 }
@@ -2769,12 +2424,14 @@ export default function App() {
   const [answers, setAnswers] = useState({});
   const [leadId, setLeadId] = useState(null);
   const [user, setUser] = useState(undefined);
+  const [activeProject, setActiveProject] = useState(null); // { id, businessName, industry, tools, ... }
 
   const isAudit = location.pathname === "/journey";
   const isPsychology = location.pathname === "/psychology";
+  const isCompetitor = location.pathname === "/competitor";
   const showDashboard = location.pathname === "/history";
   const showSettings = location.pathname === "/settings";
-  const isToolsDashboard = location.pathname === "/" || location.pathname === "/tools";
+  const isToolsDashboard = location.pathname === "/" || location.pathname === "/tools" || location.pathname === "/setup";
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -2789,6 +2446,23 @@ export default function App() {
     setPersonas(null);
     setAnswers({});
     setLeadId(null);
+  }
+
+  // ── Save tool completion to Firestore project ─────────────────
+  async function markToolComplete(toolId) {
+    if (!activeProject || !auth.currentUser) return;
+    const updatedTools = { ...(activeProject.tools || {}), [toolId]: "complete" };
+    const updatedProject = { ...activeProject, tools: updatedTools };
+    setActiveProject(updatedProject);
+    try {
+      await setDoc(
+        doc(db, "users", auth.currentUser.uid, "projects", activeProject.id),
+        { tools: updatedTools },
+        { merge: true }
+      );
+    } catch (e) {
+      console.error("Failed to update tool status", e);
+    }
   }
 
   if (user === undefined)
@@ -2806,7 +2480,7 @@ export default function App() {
         <Spinner message="Loading..." />
       </div>
     );
-  if (!user) return <AuthScreen />;
+  if (!user) return <AuthScreen />;;
 
   return (
     <div className="layout-container">
@@ -2816,7 +2490,7 @@ export default function App() {
           flex-direction: row;
           min-height: 100vh;
           background: ${DARK_MODE_BACKGROUND};
-          font-family: 'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Open Sans','Helvetica Neue',sans-serif;
+          font-family: 'Inter Tight', system-ui, sans-serif;
           color: ${TEXT_COLOR};
         }
         .side-nav {
@@ -2846,7 +2520,7 @@ export default function App() {
           border-radius: 12px;
           border: none;
           cursor: pointer;
-          font-weight: 700;
+          font-weight: 400;
           font-size: 15px;
           text-align: left;
           transition: all .2s;
@@ -2864,7 +2538,7 @@ export default function App() {
           color: ${TEXT_COLOR};
         }
         .nav-btn-icon {
-          font-size: 20px;
+          font-size: 18px;
           display: none; /* Hidden by default on desktop */
         }
         @media (max-width: 768px) {
@@ -2892,7 +2566,7 @@ export default function App() {
             flex-direction: column;
             gap: 4px;
             padding: 10px;
-            font-size: 10px;
+            font-size: 14px;
             border-radius: 8px;
             justify-content: center;
           }
@@ -2923,22 +2597,22 @@ export default function App() {
               width: 36,
               height: 36,
               borderRadius: 10,
-              background: `linear-gradient(45deg, ${PRIMARY_BLUE}, #00AFFF)`,
+              background: PRIMARY_BLUE,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: 18,
-              fontWeight: 900,
+              fontWeight: 400,
               color: "#FFFFFF",
             }}
           >
             P
           </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: TEXT_COLOR }}>
+            <div style={{ fontSize: 15, fontWeight: 400, color: TEXT_COLOR }}>
               PeoplePlex
             </div>
-            <div style={{ fontSize: 11, color: MUTED_COLOR }}>Growth Tools</div>
+            <div style={{ fontSize: 14, color: MUTED_COLOR }}>Growth Tools</div>
           </div>
         </div>
 
@@ -2947,7 +2621,7 @@ export default function App() {
           onClick={() => navigate("/")}
         >
           <span className="nav-btn-icon">📦</span>
-          <span>All Tools</span>
+          <span>{activeProject ? activeProject.businessName : "All Tools"}</span>
         </button>
 
         <button
@@ -2966,6 +2640,14 @@ export default function App() {
         >
           <span className="nav-btn-icon">🧠</span>
           <span>Psychology Audit</span>
+        </button>
+
+        <button
+          className={`nav-btn ${isCompetitor ? "active" : "inactive"}`}
+          onClick={() => navigate("/competitor")}
+        >
+          <span className="nav-btn-icon">🎯</span>
+          <span>Competitor Analysis</span>
         </button>
 
         <button
@@ -3000,44 +2682,129 @@ export default function App() {
       <div className="main-content">
         <Routes>
           <Route path="/" element={
+            !activeProject ? (
+              <ProjectsDashboard
+                onSelectProject={(proj) => {
+                  setActiveProject(proj);
+                  setBusiness({
+                    businessName: proj.businessName,
+                    industry: proj.industry,
+                    description: proj.description,
+                    location: proj.location,
+                    websiteUrl: proj.websiteUrl || "",
+                    gmbUrl: proj.gmbUrl || "",
+                    socialUrl: proj.socialUrl || "",
+                    pricingTier: proj.pricingTier || null,
+                    additionalNotes: proj.additionalNotes || "",
+                    analysis: proj.analysis || {},
+                  });
+                  setStep(1);
+                }}
+                onCreateProject={() => {
+                  setActiveProject(null);
+                  setBusiness(null);
+                  setStep(0);
+                  navigate("/setup");
+                }}
+              />
+            ) : (
+              <ToolsDashboard
+                business={business}
+                project={activeProject}
+                onRestart={() => {
+                  setBusiness(null);
+                  setActiveProject(null);
+                  setStep(0);
+                }}
+                onSwitchProject={() => {
+                  setBusiness(null);
+                  setActiveProject(null);
+                  setStep(0);
+                }}
+                setupWizard={
+                  <StepDescribe
+                    onNext={async (d) => {
+                      const newProjectId = `project_${Date.now()}`;
+                      const projectData = {
+                        id: newProjectId,
+                        businessName: d.businessName,
+                        industry: d.industry,
+                        description: d.description,
+                        location: d.location,
+                        websiteUrl: d.websiteUrl || "",
+                        gmbUrl: d.gmbUrl || "",
+                        socialUrl: d.socialUrl || "",
+                        pricingTier: d.pricingTier || null,
+                        additionalNotes: d.additionalNotes || "",
+                        analysis: d.analysis || {},
+                        status: "active",
+                        tools: {},
+                        createdAt: new Date().toISOString(),
+                        source: "PeoplePlex App",
+                      };
+                      setBusiness(d);
+                      setLeadId(newProjectId);
+                      const newProj = projectData;
+                      setActiveProject(newProj);
+                      if (auth.currentUser) {
+                        setDoc(
+                          doc(db, "users", auth.currentUser.uid, "projects", newProjectId),
+                          projectData
+                        ).catch(err => console.error("Firestore save error:", err));
+                      }
+                      setStep(1);
+                    }}
+                  />
+                }
+              />
+            )
+          } />
+
+          <Route path="/setup" element={
             <ToolsDashboard
-              business={business}
-              onRestart={restart}
+              business={null}
+              project={null}
+              onRestart={() => { setBusiness(null); setActiveProject(null); setStep(0); navigate("/"); }}
+              onSwitchProject={() => navigate("/")}
               setupWizard={
                 <StepDescribe
-                  onNext={(d) => {
-                    setBusiness(d);
-                    const newLeadId = `audit_${Date.now()}`;
-                    setLeadId(newLeadId);
-                    const auditData = {
-                      id: newLeadId,
+                  onNext={async (d) => {
+                    const newProjectId = `project_${Date.now()}`;
+                    const projectData = {
+                      id: newProjectId,
                       businessName: d.businessName,
-                      additionalNotes: d.additionalNotes,
                       industry: d.industry,
+                      description: d.description,
                       location: d.location,
                       websiteUrl: d.websiteUrl || "",
                       gmbUrl: d.gmbUrl || "",
                       socialUrl: d.socialUrl || "",
-                      pricingTier: d.pricingTier?.label || "Unknown",
-                      completedAt: new Date().toISOString(),
+                      pricingTier: d.pricingTier || null,
+                      additionalNotes: d.additionalNotes || "",
+                      analysis: d.analysis || {},
+                      status: "active",
+                      tools: {},
+                      createdAt: new Date().toISOString(),
                       source: "PeoplePlex App",
                     };
-
+                    setBusiness(d);
+                    setLeadId(newProjectId);
+                    setActiveProject(projectData);
                     if (auth.currentUser) {
                       setDoc(
-                        doc(db, "users", auth.currentUser.uid, "audits", newLeadId),
-                        auditData
-                      ).catch((err) => {
-                        console.error("Firestore save error:", err);
-                      });
+                        doc(db, "users", auth.currentUser.uid, "projects", newProjectId),
+                        projectData
+                      ).catch(err => console.error("Firestore save error:", err));
                     }
-                    setStep(1); // Set step to 1 so the Journey tool starts on Personas
+                    setStep(1);
+                    navigate("/");
                   }}
                 />
               }
             />
           } />
           <Route path="/psychology" element={<CustomerPsychology business={business} personas={personas} />} />
+          <Route path="/competitor" element={<CompetitorAnalysis business={business} onComplete={() => markToolComplete("competitor")} />} />
 
           <Route path="/settings" element={
             <UserProfileSettings
@@ -3063,7 +2830,7 @@ export default function App() {
           <Route path="/journey" element={
             <div
               style={{
-                maxWidth: 560,
+                maxWidth: 800,
                 margin: "0 auto",
                 padding: "40px 20px 60px",
               }}
@@ -3071,11 +2838,9 @@ export default function App() {
               {!business ? (
                 <div style={{ textAlign: "center", paddingTop: 80 }}>
                   <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-                  <h2 style={{ fontSize: 24, fontWeight: 800, color: TEXT_COLOR, marginBottom: 16 }}>Project Not Setup</h2>
-                  <p style={{ color: MUTED_COLOR, marginBottom: 32, fontSize: 16 }}>Please complete the Project Setup Wizard on the Dashboard to access this tool.</p>
-                  <GradientButton
-                    onClick={() => navigate("/")}
-                  >
+                  <h2 style={{ fontSize: 22, fontWeight: 400, color: TEXT_COLOR, marginBottom: 16 }}>Project Not Setup</h2>
+                  <p style={{ color: MUTED_COLOR, marginBottom: 32, fontSize: 15 }}>Please complete the Project Setup Wizard on the Dashboard to access this tool.</p>
+                  <GradientButton onClick={() => navigate("/")}>
                     Go to Dashboard →
                   </GradientButton>
                 </div>
@@ -3106,32 +2871,23 @@ export default function App() {
                     />
                   )}
                   {step === 3 && (
-                    <StepAudit
-                      onNext={(a) => {
-                        setAnswers(a);
-                        setStep(4);
-                      }}
-                      onBack={() => setStep(2)}
-                    />
-                  )}
-                  {step === 4 && (
                     <StepResults
                       business={business}
                       personas={personas}
-                      answers={answers}
+                      answers={{}}
                       leadId={leadId}
                       onRestart={restart}
                       onNavigatePsychology={() => navigate("/psychology")}
+                      onComplete={() => markToolComplete("journey")}
                     />
                   )}
                 </>
               )}
             </div>
           } />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
     </div>
   );
 }
-
-export default JourneyAudit;
