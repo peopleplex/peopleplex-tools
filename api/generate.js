@@ -2,6 +2,7 @@
 // Priority: ANTHROPIC_API_KEY → GROQ_API_KEY (free, fast) → GEMINI_API_KEY → OPENAI_API_KEY
 
 export default async function handler(req, res) {
+  console.log(`[API Proxy] Incoming request: ${req.method} to /api/generate`);
   // ── CORS headers ─────────────────────────────────────────────
   const allowedOrigins = [
     'https://tools.peopleplex.one',
@@ -20,7 +21,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { messages, prompt, model, max_tokens = 4000 } = req.body;
+    const { messages, prompt, model, max_tokens = 4000, system } = req.body;
 
     let promptText = '';
     let apiMessages = [];
@@ -43,128 +44,119 @@ export default async function handler(req, res) {
     let resultText = '';
 
     if (anthropicKey) {
-      // ══════════════════════════════════════════════════════════
-      // ANTHROPIC CLAUDE
-      // ══════════════════════════════════════════════════════════
-      console.log('Using Anthropic API...');
-      const apiModel = model || 'claude-3-sonnet-20240229'; // Fallback model
+      try {
+        console.log('Attempting Anthropic API...');
+        const apiModel = model || 'claude-3-sonnet-20240229';
+        const body = { model: apiModel, max_tokens, messages: apiMessages, temperature: 0.7 };
+        if (system) body.system = system;
 
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': anthropicKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({ model: apiModel, max_tokens, messages: apiMessages, temperature: 0.7 }),
-      });
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': anthropicKey,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify(body),
+        });
 
-      if (!response.ok) {
-        const error = await response.text();
-        console.error('Anthropic API error:', error);
-        // If Anthropic fails, we'll let the logic fall through to the next provider
-      } else {
-        // Anthropic returns the right format — return directly
-        const data = await response.json();
-        return res.status(200).json(data);
+        if (response.ok) {
+          const data = await response.json();
+          return res.status(200).json(data);
+        } else {
+          const error = await response.text();
+          console.error('Anthropic API error:', error);
+        }
+      } catch (e) {
+        console.error('Anthropic network/fetch error:', e.message);
       }
-
     }
 
     // Fallback to other providers if Anthropic is not available or fails
     if (groqKey) {
-      // ══════════════════════════════════════════════════════════
-      // GROQ — 100% FREE, No Credit Card, Ultra Fast
-      // ══════════════════════════════════════════════════════════
-      console.log('Falling back to Groq API (free)...');
+      try {
+        console.log('Attempting Groq API...');
+        const groqMessages = system ? [{ role: 'system', content: system }, ...apiMessages] : apiMessages;
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqKey}` },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: groqMessages,
+            max_tokens: max_tokens,
+            temperature: 0.7,
+          }),
+        });
 
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${groqKey}`,
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: apiMessages,
-          max_tokens: max_tokens,
-          temperature: 0.7,
-        }),
-      });
-
-      const responseText = await response.text();
-
-      if (!response.ok) {
-        console.error('Groq API error:', responseText);
-        // Let it fall through to the next provider
-      } else {
-        const data = JSON.parse(responseText);
-        resultText = data.choices[0].message.content;
-        // Return in Anthropic-compatible format
-        return res.status(200).json({ content: [{ type: 'text', text: resultText }] });
+        if (response.ok) {
+          const data = await response.json();
+          resultText = data.choices[0].message.content;
+          return res.status(200).json({ content: [{ type: 'text', text: resultText }] });
+        } else {
+          const error = await response.text();
+          console.error('Groq API error:', error);
+        }
+      } catch (e) {
+        console.error('Groq network/fetch error:', e.message);
       }
-
     }
 
     if (geminiKey) {
-      // ══════════════════════════════════════════════════════════
-      // GOOGLE GEMINI
-      // ══════════════════════════════════════════════════════════
-      console.log('Falling back to Google Gemini API...');
+      try {
+        console.log('Attempting Gemini API...');
+        const geminiModel = 'gemini-1.5-flash-latest';
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`;
+        const geminiPrompt = system ? `[INSTRUCTIONS]\n${system}\n\n[USER INPUT]\n${promptText}` : promptText;
 
-      const geminiModel = 'gemini-1.5-flash-latest';
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: geminiPrompt }] }],
+            generationConfig: { maxOutputTokens: max_tokens, temperature: 0.7 },
+          }),
+        });
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: promptText }] }],
-          generationConfig: { maxOutputTokens: max_tokens, temperature: 0.7 },
-        }),
-      });
-
-      const responseText = await response.text();
-
-      if (!response.ok) {
-        console.error('Gemini API error:', responseText);
-        // Let it fall through
-      } else {
-        const data = JSON.parse(responseText);
-        if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
-          // Fall through
+        if (response.ok) {
+          const data = await response.json();
+          if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+            resultText = data.candidates[0].content.parts[0].text;
+            return res.status(200).json({ content: [{ type: 'text', text: resultText }] });
+          }
         } else {
-          resultText = data.candidates[0].content.parts[0].text;
-          return res.status(200).json({ content: [{ type: 'text', text: resultText }] });
+          const error = await response.text();
+          console.error('Gemini API error:', error);
         }
+      } catch (e) {
+        console.error('Gemini network/fetch error:', e.message);
       }
     }
 
     if (openaiKey) {
-      // ══════════════════════════════════════════════════════════
-      // OPENAI GPT
-      // ══════════════════════════════════════════════════════════
-      console.log('Falling back to OpenAI API...');
+      try {
+        console.log('Attempting OpenAI API...');
+        const openaiMessages = system ? [{ role: 'system', content: system }, ...apiMessages] : apiMessages;
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
+          body: JSON.stringify({
+            model: 'gpt-4o',
+            messages: openaiMessages,
+            max_tokens,
+            temperature: 0.7,
+          }),
+        });
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${openaiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: apiMessages,
-          max_tokens,
-          temperature: 0.7,
-        }),
-      });
-
-      const responseText = await response.text();
-      if (response.ok) {
-        const data = JSON.parse(responseText);
-        resultText = data.choices[0].message.content;
-        return res.status(200).json({ content: [{ type: 'text', text: resultText }] });
+        if (response.ok) {
+          const data = await response.json();
+          resultText = data.choices[0].message.content;
+          return res.status(200).json({ content: [{ type: 'text', text: resultText }] });
+        } else {
+          const error = await response.text();
+          console.error('OpenAI API error:', error);
+        }
+      } catch (e) {
+        console.error('OpenAI network/fetch error:', e.message);
       }
     }
 

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
+import ReactMarkdown from 'react-markdown';
+
 
 // ── Helpers ─────────────────────────────────────────
 function parseAI(text) {
@@ -46,10 +48,11 @@ function BarChart({ data, color = '#FF6B35' }) {
                     <div style={{
                         width: '100%', borderRadius: '4px 4px 0 0',
                         height: `${(d.value / max) * 64}px`,
-                        background: `linear-gradient(180deg, ${color}, ${color}88)`,
-                        transition: 'height 0.6s ease', minHeight: 4
+                        background: `linear-gradient(180deg, ${color}, ${color}44)`,
+                        transition: 'height 1s cubic-bezier(0.4, 0, 0.2, 1)', minHeight: 4,
+                        boxShadow: `0 4px 12px ${color}22`
                     }} />
-                    <span style={{ fontSize: 10, color: '#475569', textAlign: 'center', lineHeight: 1.2 }}>{d.label}</span>
+                    <span style={{ fontSize: 10, color: '#64748B', textAlign: 'center', lineHeight: 1.2, marginTop: 4 }}>{d.label}</span>
                 </div>
             ))}
         </div>
@@ -179,9 +182,11 @@ function InfoTooltip({ text }) {
 function SectionCard({ icon, title, color, children, badge, info }) {
     return (
         <div style={{
-            background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
-            borderRadius: 20, marginBottom: 24, overflow: 'hidden'
-        }}>
+            background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)',
+            borderRadius: 24, marginBottom: 24, overflow: 'hidden',
+            transition: 'transform 0.3s ease, border-color 0.3s ease',
+            cursor: 'default'
+        }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'; }}>
             <div style={{
                 padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)',
                 display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between'
@@ -201,7 +206,7 @@ function SectionCard({ icon, title, color, children, badge, info }) {
     );
 }
 
-function Tag({ text, color = '#FF6B35' }) {
+function Tag({ text, color = '#C5A059' }) {
     return (
         <span style={{
             display: 'inline-block', background: `${color}12`, border: `1px solid ${color}30`,
@@ -310,22 +315,23 @@ function LoadingScreen({ steps, currentStep }) {
         }}>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
                 <div style={{
-                    width: 72, height: 72, borderRadius: 20, margin: '0 auto 20px',
-                    background: 'linear-gradient(135deg, #FF6B35, #FF8C5A)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34
+                    width: 72, height: 72, borderRadius: 24, margin: '0 auto 24px',
+                    background: 'linear-gradient(135deg, #C5A059, #E2D1B0)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34,
+                    boxShadow: '0 0 40px rgba(197, 160, 89, 0.2)'
                 }}>⚡</div>
-                <h2 style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 26, fontWeight: 800, color: '#F1F5F9', marginBottom: 8 }}>
-                    Generating Your Intelligence Report
+                <h2 style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 28, fontWeight: 700, color: '#FFFFFF', marginBottom: 12, letterSpacing: '-0.02em' }}>
+                    Generating Intelligence Report
                 </h2>
-                <p style={{ fontSize: 15, color: '#64748B' }}>This takes about 60–90 seconds. Please stay on this page.</p>
+                <p style={{ fontSize: 16, color: '#666666' }}>Curating specialized market data for {formData?.businessName || 'your business'}...</p>
             </div>
 
             <div style={{ width: '100%', maxWidth: 500, marginBottom: 40 }}>
                 <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 6, marginBottom: 24 }}>
                     <div style={{
                         height: '100%', borderRadius: 6, width: `${((currentStep + 1) / steps.length) * 100}%`,
-                        background: 'linear-gradient(90deg, #FF6B35, #FF8C5A)',
-                        transition: 'width 0.6s ease'
+                        background: 'linear-gradient(90deg, #C5A059, #E2D1B0)',
+                        transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)'
                     }} />
                 </div>
 
@@ -377,6 +383,16 @@ export default function ReportDashboard({ user }) {
     const [activeTab, setActiveTab] = useState('journey');
     const [error, setError] = useState('');
 
+
+    // AI Chat State
+    const [chatHistory, setChatHistory] = useState([
+        { role: 'assistant', content: "Hi! I'm your AI Business Advisor. I've analyzed your entire report. Ask me to write emails, draft ad copy, or clarify any strategy based on your project." }
+    ]);
+    const [chatInput, setChatInput] = useState('');
+    const [isChatting, setIsChatting] = useState(false);
+    const [pastSessions, setPastSessions] = useState([]);
+
+
     // Load or generate report
     useEffect(() => {
         (async () => {
@@ -387,6 +403,14 @@ export default function ReportDashboard({ user }) {
 
                 const data = snap.data();
                 setForm(data.form);
+
+                // Load existing chat history if it exists
+                if (data.chatHistory && Array.isArray(data.chatHistory) && data.chatHistory.length > 0) {
+                    setChatHistory(data.chatHistory);
+                }
+                if (data.pastSessions && Array.isArray(data.pastSessions)) {
+                    setPastSessions(data.pastSessions);
+                }
 
                 if (data.status === 'done' && data.reportData) {
                     setReport(data.reportData);
@@ -582,6 +606,143 @@ Return JSON:
         }
     }, []);
 
+    // ── Chat Logic ──
+    const handleChatSubmit = async (e) => {
+        e?.preventDefault();
+        if (!chatInput.trim() || isChatting) return;
+
+        const userMsg = chatInput.trim();
+        const newHistory = [...chatHistory, { role: 'user', content: userMsg }];
+        setChatHistory(newHistory);
+        setChatInput('');
+        setIsChatting(true);
+
+        // Optimize context: Instead of dumping the whole report JSON, create a key-topic summary
+        const reportSummary = `
+PRODUCT/BUSINESS: ${form?.businessName || 'This project'}
+INDUSTRY: ${form?.industry || 'General'}
+KEY FINDINGS:
+- Journey Goal: ${report?.journey?.goal || 'N/A'}
+- Top Persona: ${report?.personas?.[0]?.name || 'N/A'} (Archetype: ${report?.personas?.[0]?.archetype || 'N/A'})
+- Core Psychology: ${report?.psychology?.coreDesires?.slice(0, 3).join(', ') || 'N/A'}
+- Market Dynamics: ${report?.industry?.dynamics || 'N/A'}
+- Immediate Actions: ${report?.actionPlan?.immediateActions?.map(a => a.action).slice(0, 3).join(' | ') || 'N/A'}
+        `.trim();
+
+        const systemPrompt = `You are a world-class AI Business Advisor. 
+Context for this session:
+${reportSummary}
+
+Directive: Use the data above to answer specifically. If the user asks for ad copy, emails, or strategy, tailor it to this business and persona. Be direct and helpful. Use markdown.`;
+
+        // Anthropic/Standard AI requirement: First message must be 'user', roles must alternate.
+        // We'll filter out the initial welcome message from the history sent to the API
+        // because the API doesn't know about it yet.
+        const apiMessages = newHistory.slice(1).map(m => ({
+            role: m.role,
+            content: m.content
+        }));
+
+        try {
+            const res = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    system: systemPrompt,
+                    messages: apiMessages,
+                    max_tokens: 2000
+                })
+            }).catch(e => {
+                throw new Error("Local API server (port 3001) is not responding. Please ensure 'node server.js' is running.");
+            });
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                let errMsg = 'AI Provider connection failed.';
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    errMsg = errorJson.message || errorJson.error || errMsg;
+                } catch {
+                    errMsg = errorText || errMsg;
+                }
+                throw new Error(errMsg);
+            }
+
+            const data = await res.json();
+            const reply = data.content?.[0]?.text || data.message || '';
+
+            if (!reply) throw new Error("No response from advisor.");
+
+            const updatedHistory = [...newHistory, { role: 'assistant', content: reply }];
+            setChatHistory(updatedHistory);
+
+            // Persist to Firebase
+            await updateDoc(doc(db, 'reports', reportId), {
+                chatHistory: updatedHistory,
+                lastActive: serverTimestamp()
+            }).catch(e => console.error('Failed to save chat history:', e));
+
+        } catch (err) {
+            console.error('Chat error:', err);
+            const errorHistory = [...newHistory, { role: 'assistant', content: `[Advisor Error: ${err.message}]` }];
+            setChatHistory(errorHistory);
+            
+            // Still save the error state if it was a user message failure
+            await updateDoc(doc(db, 'reports', reportId), {
+                chatHistory: errorHistory
+            }).catch(() => {});
+        } finally {
+            setIsChatting(false);
+        }
+    };
+
+    const loadArchive = async (idx) => {
+        const selected = pastSessions[idx];
+        if (!selected) return;
+        
+        // Smart Swap: Move current active chat into archive slot, load archived into active
+        let newArchive = [...pastSessions];
+        const currentTitle = chatHistory.find(m => m.role === 'user')?.content?.substring(0, 24) + '...' || 'Previous Context';
+        
+        if (chatHistory.length > 1) {
+            newArchive[idx] = { 
+                title: currentTitle, 
+                history: chatHistory, 
+                date: new Date().toISOString() 
+            };
+        } else {
+            newArchive.splice(idx, 1);
+        }
+        
+        setChatHistory(selected.history);
+        setPastSessions(newArchive);
+        
+        await updateDoc(doc(db, 'reports', reportId), {
+            chatHistory: selected.history,
+            pastSessions: newArchive
+        }).catch(e => console.error('Archive swap failed:', e));
+    };
+
+    const handleNewChat = async () => {
+        if (chatHistory.length > 1) {
+            // Archive current session before resetting
+            const sessionTitle = chatHistory.find(m => m.role === 'user')?.content?.substring(0, 24) + '...' || 'Strategy Session';
+            const newArchive = [{ title: sessionTitle, history: chatHistory, date: new Date().toISOString() }, ...pastSessions].slice(0, 5);
+            setPastSessions(newArchive);
+            
+            const resetHistory = [{ role: 'assistant', content: "Hi! I'm your AI Business Advisor. I've analyzed your entire report. Ask me to write emails, draft ad copy, or clarify any strategy based on your project." }];
+            setChatHistory(resetHistory);
+            
+            await updateDoc(doc(db, 'reports', reportId), {
+                chatHistory: resetHistory,
+                pastSessions: newArchive
+            }).catch(e => console.error('Failed to create new chat:', e));
+        } else {
+            const resetHistory = [{ role: 'assistant', content: "Hi! I'm your AI Business Advisor. I've analyzed your entire report. Ask me to write emails, draft ad copy, or clarify any strategy based on your project." }];
+            setChatHistory(resetHistory);
+        }
+    };
+
     if (status === 'loading') {
         return (
             <div style={{ minHeight: '100vh', background: '#0A0A0F', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -609,12 +770,13 @@ Return JSON:
     }
 
     const TABS = [
-        { id: 'journey', label: '🗺️ Journey', color: '#3B82F6' },
-        { id: 'psychology', label: '🧠 Psychology', color: '#8B5CF6' },
-        { id: 'industry', label: '📊 Industry', color: '#10B981' },
-        { id: 'personas', label: '👥 Personas', color: '#F59E0B' },
-        { id: 'buying', label: '💡 Buying', color: '#EF4444' },
-        { id: 'plan', label: '⚡ Action Plan', color: '#FF6B35' },
+        { id: 'journey', label: 'MAP JOURNEY', icon: '🗺️', color: '#3B82F6' },
+        { id: 'psychology', label: 'PSYCHOLOGY', icon: '🧠', color: '#8B5CF6' },
+        { id: 'industry', label: 'INDUSTRY', icon: '📊', color: '#10B981' },
+        { id: 'personas', label: 'PERSONAS', icon: '👥', color: '#F59E0B' },
+        { id: 'buying', label: 'BUYING', icon: '💡', color: '#EF4444' },
+        { id: 'plan', label: 'ACTION PLAN', icon: '⚡', color: '#C5A059' },
+        { id: 'chat', label: 'AI ADVISOR', icon: '✨', color: '#E2D1B0' },
     ];
 
     return (
@@ -634,382 +796,686 @@ Return JSON:
                     }}>←</button>
                     <div>
                         <div style={{ fontFamily: "'Inter Tight', sans-serif", fontWeight: 700, fontSize: 15, color: '#F1F5F9' }}>
-                            {form?.businessName || 'Business'} Report
+                            {form?.businessName || 'Business'} analysis
                         </div>
-                        <div style={{ fontSize: 11, color: '#475569' }}>{form?.industry}</div>
                     </div>
                     <span style={{ fontSize: 11, fontWeight: 600, color: '#10B981', background: 'rgba(16,185,129,0.1)', padding: '3px 10px', borderRadius: 100 }}>✓ Complete</span>
                 </div>
-                <button onClick={() => navigate('/my-reports')} style={{
-                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-                    color: '#94A3B8', padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
-                    fontSize: 13, fontFamily: 'Inter, sans-serif'
-                }}>
-                    My Reports
-                </button>
-            </div>
-
-            {/* Score Banner */}
-            <div style={{
-                background: 'linear-gradient(135deg, rgba(255,107,53,0.15), rgba(139,92,246,0.1))',
-                borderBottom: '1px solid rgba(255,255,255,0.06)',
-                padding: '24px 20px'
-            }}>
-                <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div>
-                        <h1 style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 'clamp(20px, 3vw, 28px)', fontWeight: 800, color: '#F1F5F9', marginBottom: 4 }}>
-                            Intelligence Report — {form?.businessName}
-                        </h1>
-                        <p style={{ fontSize: 14, color: '#64748B' }}>
-                            {form?.industry} · {form?.businessType?.toUpperCase()} · Generated {new Date().toLocaleDateString()}
-                        </p>
-                    </div>
-                    <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-                        <DonutChart value={report?.journey?.overallScore || 72} label="Journey Score" color="#3B82F6" />
-                        <DonutChart value={65} label="Market Strength" color="#10B981" />
-                        <DonutChart value={report?.buying?.loyaltyScore || 68} label="Loyalty Score" color="#8B5CF6" />
-                    </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={() => navigate('/my-reports')} style={{
+                        background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                        color: '#94A3B8', padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
+                        fontSize: 13, fontFamily: 'Inter, sans-serif'
+                    }}>
+                        My Reports
+                    </button>
                 </div>
             </div>
 
-            {/* Tabs */}
-            <div style={{
-                display: 'flex', overflowX: 'auto', gap: 4,
-                padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)',
-                background: '#0F0F1A', scrollbarWidth: 'none'
-            }}>
-                {TABS.map(t => (
-                    <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
-                        background: activeTab === t.id ? `${t.color}18` : 'transparent',
-                        border: `1px solid ${activeTab === t.id ? `${t.color}40` : 'transparent'}`,
-                        color: activeTab === t.id ? t.color : '#64748B',
-                        padding: '8px 16px', borderRadius: 10, cursor: 'pointer',
-                        fontSize: 13, fontWeight: 600, fontFamily: 'Inter, sans-serif',
-                        whiteSpace: 'nowrap', transition: 'all 0.2s'
-                    }}>
-                        {t.label}
-                    </button>
-                ))}
-            </div>
+            <div style={{ display: 'flex' }}>
+                {/* --- 📟 MINIMALIST SIDEBAR RAIL --- */}
+                <div style={{
+                    width: 68, height: 'calc(100vh - 60px)', position: 'sticky', top: 60,
+                    background: '#1A1A1A', borderRight: '1px solid rgba(255,255,255,0.03)',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 20, gap: 24,
+                    flexShrink: 0, zIndex: 100
+                }} className="dashboard-sidebar">
+                    {TABS.map(t => (
+                        <button key={t.id} onClick={() => setActiveTab(t.id)} title={t.label}
+                            onMouseEnter={e => { if (activeTab !== t.id) e.currentTarget.style.color = '#FFFFFF'; }}
+                            onMouseLeave={e => { if (activeTab !== t.id) e.currentTarget.style.color = '#666666'; }}
+                            style={{
+                                background: activeTab === t.id ? 'rgba(255,255,255,0.05)' : 'transparent',
+                                border: 'none',
+                                color: activeTab === t.id ? '#FFFFFF' : '#666666',
+                                width: 42, height: 42, borderRadius: 12, cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', position: 'relative'
+                            }}>
+                            <span style={{ fontSize: 20, filter: activeTab === t.id ? 'none' : 'grayscale(100%) opacity(0.5)', transition: 'all 0.3s' }}>{t.icon}</span>
+                            {activeTab === t.id && (
+                                <div style={{ position: 'absolute', left: 0, width: 3, height: 20, background: '#C5A059', borderRadius: '0 4px 4px 0', boxShadow: '0 0 10px #C5A059' }} />
+                            )}
+                        </button>
+                    ))}
+                </div>
 
-            {/* Content */}
-            <div style={{ maxWidth: 1000, margin: '0 auto', padding: '28px 20px' }}>
-
-                {/* ── JOURNEY TAB ── */}
-                {activeTab === 'journey' && report?.journey && (
-                    <div>
-                        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
-                            <div style={{ flex: 1, minWidth: 200, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '18px 20px' }}>
-                                <div style={{ fontSize: 12, color: '#64748B', marginBottom: 4 }}>TOP RISK STAGE</div>
-                                <div style={{ fontSize: 14, fontWeight: 600, color: '#EF4444', lineHeight: 1.5 }}>{report.journey.topRisk}</div>
-                            </div>
-                            <div style={{ flex: 1, minWidth: 200, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '18px 20px' }}>
-                                <div style={{ fontSize: 12, color: '#64748B', marginBottom: 4 }}>QUICK WIN</div>
-                                <div style={{ fontSize: 14, fontWeight: 600, color: '#10B981', lineHeight: 1.5 }}>{report.journey.quickWin}</div>
-                            </div>
-                        </div>
-
-                        {/* Risk bar chart */}
-                        {report.journey.stages?.length > 0 && (
-                            <SectionCard icon="📈" title="Revenue Risk by Stage" color="#3B82F6" badge="5 Stages Mapped"
-                                info="Shows how much revenue you are at risk of losing at each step of the customer journey. Higher % = more customers dropping off at that stage.">
-                                <BarChart
-                                    data={report.journey.stages.map(s => ({ label: s.name, value: s.riskScore || 70 }))}
-                                    color="#3B82F6"
-                                />
-                                <p style={{ fontSize: 12, color: '#475569', marginTop: 12 }}>Higher bar = higher revenue loss risk at that stage</p>
-                            </SectionCard>
-                        )}
-
-                        <SectionCard icon="🗺️" title="5-Stage Customer Journey" color="#3B82F6"
-                            info="A step-by-step map of how your customers find you, evaluate you, buy from you, stay with you, and recommend you. Each stage shows where you are losing people and what to do about it.">
-                            {report.journey.stages?.map((s, i) => <JourneyStage key={i} stage={s} index={i} />)}
-                        </SectionCard>
-                    </div>
-                )}
-
-                {/* ── PSYCHOLOGY TAB ── */}
-                {activeTab === 'psychology' && report?.psychology && (
-                    <div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }} className="psych-grid">
-                            <SectionCard icon="✨" title="Core Desires" color="#8B5CF6"
-                                info="The deep emotional and practical things your customers really want when they look for a product like yours. Use these to write your headlines, ads, and pitch.">
-                                {report.psychology.coreDesires?.map((d, i) => (
-                                    <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
-                                        <div style={{ width: 20, height: 20, borderRadius: 6, background: '#8B5CF680', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, flexShrink: 0 }}>{i + 1}</div>
-                                        <span style={{ fontSize: 14, color: '#C4B5FD', lineHeight: 1.5 }}>{fmt(d)}</span>
+                {/* --- 📄 MAIN CONTENT AREA --- */}
+                <div style={{ flex: 1, minWidth: 0, background: '#111111' }}>
+                    {activeTab !== 'chat' && (
+                        <>
+                            <div style={{
+                                background: '#1A1A1A',
+                                borderBottom: '1px solid rgba(255,255,255,0.03)',
+                                padding: '40px 60px'
+                            }}>
+                                <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: 40, alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <div>
+                                        <h1 style={{ fontFamily: "Inter, sans-serif", fontSize: 28, fontWeight: 600, color: '#FFFFFF', marginBottom: 8, letterSpacing: '-0.02em' }}>
+                                            Overview Analysis
+                                        </h1>
+                                        <p style={{ fontSize: 18, color: '#9B9B9B', fontWeight: 500 }}>
+                                            {form?.industry} · {form?.businessType?.toUpperCase()} · {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                        </p>
                                     </div>
-                                ))}
-                            </SectionCard>
-                            <SectionCard icon="🚨" title="Biggest Fears" color="#EF4444"
-                                info="What your customers are most afraid of when making a purchase decision. Addressing these fears in your marketing directly reduces hesitation and increases trust.">
-                                {report.psychology.biggestFears?.map((f, i) => (
-                                    <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
-                                        <span style={{ color: '#EF4444', flexShrink: 0 }}>⚠</span>
-                                        <span style={{ fontSize: 14, color: '#FCA5A5', lineHeight: 1.5 }}>{fmt(f)}</span>
+                                    <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
+                                        <DonutChart value={report?.journey?.overallScore || 72} label="Journey Health" color="#3B82F6" />
+                                        <DonutChart value={report?.industry?.industryScore?.value || 68} label="Market Context" color="#10B981" />
+                                        <DonutChart value={report?.buying?.loyaltyScore || 70} label="Loyalty Index" color="#8B5CF6" />
                                     </div>
-                                ))}
-                            </SectionCard>
-                        </div>
-
-                        <SectionCard icon="🎯" title="Buying Triggers" color="#10B981"
-                            info="The specific events or feelings that push a customer to finally make a purchase. These are the moments you should target with your ads, emails, and offers.">
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-                                {report.psychology.buyingTriggers?.map((t, i) => <Tag key={i} text={t} color="#10B981" />)}
+                                </div>
                             </div>
-                        </SectionCard>
+                            <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 60px' }}>
 
-                        {report.psychology.psychScores && (
-                            <SectionCard icon="📡" title="Psychological Influence Scores" color="#8B5CF6"
-                                info="A radar chart showing how strongly different psychological levers (trust, urgency, social proof etc.) influence your customers. Higher score = more impactful lever to use in messaging.">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 32, flexWrap: 'wrap' }}>
-                                    <RadarChart data={report.psychology.psychScores} color="#8B5CF6" />
-                                    <div style={{ flex: 1 }}>
-                                        {report.psychology.psychScores.map((s, i) => (
-                                            <div key={i} style={{ marginBottom: 10 }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                                                    <span style={{ fontSize: 13, color: '#94A3B8' }}>{s.label}</span>
-                                                    <span style={{ fontSize: 13, fontWeight: 700, color: '#F1F5F9' }}>{s.value}%</span>
-                                                </div>
-                                                <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 6 }}>
-                                                    <div style={{ height: '100%', width: `${s.value}%`, borderRadius: 6, background: 'linear-gradient(90deg, #8B5CF6, #A78BFA)', transition: 'width 1s ease' }} />
-                                                </div>
+                                {/* ── JOURNEY TAB ── */}
+                                {activeTab === 'journey' && report?.journey && (
+                                    <div>
+                                        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
+                                            <div style={{ flex: 1, minWidth: 200, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '18px 20px' }}>
+                                                <div style={{ fontSize: 12, color: '#9B9B9B', marginBottom: 4 }}>TOP RISK STAGE</div>
+                                                <div style={{ fontSize: 14, fontWeight: 600, color: '#EF4444', lineHeight: 1.5 }}>{report.journey.topRisk}</div>
                                             </div>
-                                        ))}
+                                            <div style={{ flex: 1, minWidth: 200, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '18px 20px' }}>
+                                                <div style={{ fontSize: 12, color: '#64748B', marginBottom: 4 }}>QUICK WIN</div>
+                                                <div style={{ fontSize: 14, fontWeight: 600, color: '#10B981', lineHeight: 1.5 }}>{report.journey.quickWin}</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Risk bar chart */}
+                                        {report.journey.stages?.length > 0 && (
+                                            <SectionCard icon="📈" title="Revenue Risk by Stage" color="#3B82F6" badge="5 Stages Mapped"
+                                                info="Shows how much revenue you are at risk of losing at each step of the customer journey. Higher % = more customers dropping off at that stage.">
+                                                <BarChart
+                                                    data={report.journey.stages.map(s => ({ label: s.name, value: s.riskScore || 70 }))}
+                                                    color="#3B82F6"
+                                                />
+                                                <p style={{ fontSize: 12, color: '#475569', marginTop: 12 }}>Higher bar = higher revenue loss risk at that stage</p>
+                                            </SectionCard>
+                                        )}
+
+                                        <SectionCard icon="🗺️" title="5-Stage Customer Journey" color="#3B82F6"
+                                            info="A step-by-step map of how your customers find you, evaluate you, buy from you, stay with you, and recommend you. Each stage shows where you are losing people and what to do about it.">
+                                            {report.journey.stages?.map((s, i) => <JourneyStage key={i} stage={s} index={i} />)}
+                                        </SectionCard>
                                     </div>
-                                </div>
-                            </SectionCard>
-                        )}
+                                )}
 
-                        <SectionCard icon="💬" title="Conversion Strategy" color="#FF6B35"
-                            info="AI-generated recommendations on exactly how to tweak your messaging, offer, and communication to convert more visitors into paying customers.">
-                            <p style={{ fontSize: 15, lineHeight: 1.7, color: '#94A3B8', marginBottom: 16 }}>{report.psychology.conversionAdvice}</p>
-                            {report.psychology.messagingHooks && (
-                                <>
-                                    <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', letterSpacing: '0.08em', marginBottom: 10 }}>MESSAGING HOOKS TO USE</div>
-                                    {report.psychology.messagingHooks.map((h, i) => (
-                                        <div key={i} style={{
-                                            padding: '12px 16px', background: 'rgba(255,107,53,0.06)', border: '1px solid rgba(255,107,53,0.15)',
-                                            borderRadius: 10, marginBottom: 8, fontSize: 14, color: '#FDBA74', lineHeight: 1.5
-                                        }}>{h}</div>
-                                    ))}
-                                </>
-                            )}
-                        </SectionCard>
-                    </div>
-                )}
+                                {/* ── PSYCHOLOGY TAB ── */}
+                                {activeTab === 'psychology' && report?.psychology && (
+                                    <div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }} className="psych-grid">
+                                            <SectionCard icon="✨" title="Core Desires" color="#8B5CF6"
+                                                info="The deep emotional and practical things your customers really want when they look for a product like yours. Use these to write your headlines, ads, and pitch.">
+                                                {report.psychology.coreDesires?.map((d, i) => (
+                                                    <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
+                                                        <div style={{ width: 20, height: 20, borderRadius: 6, background: '#8B5CF680', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, flexShrink: 0 }}>{i + 1}</div>
+                                                        <span style={{ fontSize: 14, color: '#C4B5FD', lineHeight: 1.5 }}>{fmt(d)}</span>
+                                                    </div>
+                                                ))}
+                                            </SectionCard>
+                                            <SectionCard icon="🚨" title="Biggest Fears" color="#EF4444"
+                                                info="What your customers are most afraid of when making a purchase decision. Addressing these fears in your marketing directly reduces hesitation and increases trust.">
+                                                {report.psychology.biggestFears?.map((f, i) => (
+                                                    <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
+                                                        <span style={{ color: '#EF4444', flexShrink: 0 }}>⚠</span>
+                                                        <span style={{ fontSize: 14, color: '#FCA5A5', lineHeight: 1.5 }}>{fmt(f)}</span>
+                                                    </div>
+                                                ))}
+                                            </SectionCard>
+                                        </div>
 
-                {/* ── INDUSTRY TAB ── */}
-                {activeTab === 'industry' && report?.industry && (
-                    <div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }} className="industry-stats">
-                            {[
-                                { label: 'Market Size', value: report.industry.marketSize || 'N/A', icon: '💰', color: '#10B981' },
-                                { label: 'Growth Rate', value: report.industry.growthRate || 'N/A', icon: '📈', color: '#3B82F6' },
-                                { label: 'Maturity', value: report.industry.maturity || 'N/A', icon: '🎯', color: '#F59E0B' },
-                            ].map(stat => (
-                                <div key={stat.label} style={{
-                                    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
-                                    borderRadius: 16, padding: '20px', textAlign: 'center'
-                                }}>
-                                    <div style={{ fontSize: 26, marginBottom: 8 }}>{stat.icon}</div>
-                                    <div style={{ fontSize: 18, fontWeight: 800, color: stat.color, fontFamily: "'Inter Tight', sans-serif", marginBottom: 4 }}>{stat.value}</div>
-                                    <div style={{ fontSize: 12, color: '#64748B' }}>{stat.label}</div>
-                                </div>
-                            ))}
-                        </div>
+                                        <SectionCard icon="🎯" title="Buying Triggers" color="#10B981"
+                                            info="The specific events or feelings that push a customer to finally make a purchase. These are the moments you should target with your ads, emails, and offers.">
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                                                {report.psychology.buyingTriggers?.map((t, i) => <Tag key={i} text={t} color="#10B981" />)}
+                                            </div>
+                                        </SectionCard>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }} className="opp-threat-grid">
-                            <SectionCard icon="🚀" title="Opportunities" color="#10B981"
-                                info="Market gaps and emerging trends your business can exploit right now to grow faster than competitors. These are real openings in your industry that are currently underserved.">
-                                {report.industry.opportunities?.map((o, i) => (
-                                    <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                                        <span style={{ color: '#10B981', flexShrink: 0 }}>→</span>
-                                        <span style={{ fontSize: 14, color: '#94A3B8', lineHeight: 1.5 }}>{fmt(o)}</span>
+                                        {report.psychology.psychScores && (
+                                            <SectionCard icon="📡" title="Psychological Influence Scores" color="#8B5CF6"
+                                                info="A radar chart showing how strongly different psychological levers (trust, urgency, social proof etc.) influence your customers. Higher score = more impactful lever to use in messaging.">
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 32, flexWrap: 'wrap' }}>
+                                                    <RadarChart data={report.psychology.psychScores} color="#8B5CF6" />
+                                                    <div style={{ flex: 1 }}>
+                                                        {report.psychology.psychScores.map((s, i) => (
+                                                            <div key={i} style={{ marginBottom: 10 }}>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                                                    <span style={{ fontSize: 13, color: '#94A3B8' }}>{s.label}</span>
+                                                                    <span style={{ fontSize: 13, fontWeight: 700, color: '#F1F5F9' }}>{s.value}%</span>
+                                                                </div>
+                                                                <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 6 }}>
+                                                                    <div style={{ height: '100%', width: `${s.value}%`, borderRadius: 6, background: 'linear-gradient(90deg, #8B5CF6, #A78BFA)', transition: 'width 1s ease' }} />
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </SectionCard>
+                                        )}
+
+                                        <SectionCard icon="💬" title="Conversion Strategy" color="#FF6B35"
+                                            info="AI-generated recommendations on exactly how to tweak your messaging, offer, and communication to convert more visitors into paying customers.">
+                                            <p style={{ fontSize: 15, lineHeight: 1.7, color: '#94A3B8', marginBottom: 16 }}>{report.psychology.conversionAdvice}</p>
+                                            {report.psychology.messagingHooks && (
+                                                <>
+                                                    <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', letterSpacing: '0.08em', marginBottom: 10 }}>MESSAGING HOOKS TO USE</div>
+                                                    {report.psychology.messagingHooks.map((h, i) => (
+                                                        <div key={i} style={{
+                                                            padding: '12px 16px', background: 'rgba(255,107,53,0.06)', border: '1px solid rgba(255,107,53,0.15)',
+                                                            borderRadius: 10, marginBottom: 8, fontSize: 14, color: '#FDBA74', lineHeight: 1.5
+                                                        }}>{h}</div>
+                                                    ))}
+                                                </>
+                                            )}
+                                        </SectionCard>
                                     </div>
-                                ))}
-                            </SectionCard>
-                            <SectionCard icon="⚠️" title="Threats to Watch" color="#EF4444"
-                                info="External risks and competitive or market forces that could hurt your business if left unchecked. Being aware of these helps you stay one step ahead.">
-                                {report.industry.threats?.map((t, i) => (
-                                    <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                                        <span style={{ color: '#EF4444', flexShrink: 0 }}>!</span>
-                                        <span style={{ fontSize: 14, color: '#94A3B8', lineHeight: 1.5 }}>{fmt(t)}</span>
-                                    </div>
-                                ))}
-                            </SectionCard>
-                        </div>
+                                )}
 
-                        <SectionCard icon="📊" title="Key Industry Trends" color="#3B82F6"
-                            info="The biggest shifts currently happening in your industry. Knowing these trends helps you align your product, marketing, and strategy with where the market is heading.">
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-                                {report.industry.keyTrends?.map((t, i) => <Tag key={i} text={t} color="#3B82F6" />)}
-                            </div>
-                        </SectionCard>
+                                {/* ── INDUSTRY TAB ── */}
+                                {activeTab === 'industry' && report?.industry && (
+                                    <div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }} className="industry-stats">
+                                            {[
+                                                { label: 'Market Size', value: report.industry.marketSize || 'N/A', icon: '💰', color: '#10B981' },
+                                                { label: 'Growth Rate', value: report.industry.growthRate || 'N/A', icon: '📈', color: '#3B82F6' },
+                                                { label: 'Maturity', value: report.industry.maturity || 'N/A', icon: '🎯', color: '#F59E0B' },
+                                            ].map(stat => (
+                                                <div key={stat.label} style={{
+                                                    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+                                                    borderRadius: 16, padding: '20px', textAlign: 'center'
+                                                }}>
+                                                    <div style={{ fontSize: 26, marginBottom: 8 }}>{stat.icon}</div>
+                                                    <div style={{ fontSize: 18, fontWeight: 800, color: stat.color, fontFamily: "'Inter Tight', sans-serif", marginBottom: 4 }}>{stat.value}</div>
+                                                    <div style={{ fontSize: 12, color: '#64748B' }}>{stat.label}</div>
+                                                </div>
+                                            ))}
+                                        </div>
 
-                        <SectionCard icon="🎯" title="Your Positioning Strategy" color="#F59E0B"
-                            info="How your business should be uniquely positioned in the market to stand out from competitors. Includes the specific market gaps you can own and win.">
-                            <p style={{ fontSize: 14, lineHeight: 1.7, color: '#94A3B8' }}>{report.industry.uniquePositioning}</p>
-                            {report.industry.marketGaps && (
-                                <>
-                                    <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', letterSpacing: '0.08em', marginTop: 16, marginBottom: 10 }}>MARKET GAPS TO EXPLOIT</div>
-                                    {report.industry.marketGaps.map((g, i) => <Tag key={i} text={g} color="#F59E0B" />)}
-                                </>
-                            )}
-                        </SectionCard>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }} className="opp-threat-grid">
+                                            <SectionCard icon="🚀" title="Opportunities" color="#10B981"
+                                                info="Market gaps and emerging trends your business can exploit right now to grow faster than competitors. These are real openings in your industry that are currently underserved.">
+                                                {report.industry.opportunities?.map((o, i) => (
+                                                    <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                                                        <span style={{ color: '#10B981', flexShrink: 0 }}>→</span>
+                                                        <span style={{ fontSize: 14, color: '#94A3B8', lineHeight: 1.5 }}>{fmt(o)}</span>
+                                                    </div>
+                                                ))}
+                                            </SectionCard>
+                                            <SectionCard icon="⚠️" title="Threats to Watch" color="#EF4444"
+                                                info="External risks and competitive or market forces that could hurt your business if left unchecked. Being aware of these helps you stay one step ahead.">
+                                                {report.industry.threats?.map((t, i) => (
+                                                    <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                                                        <span style={{ color: '#EF4444', flexShrink: 0 }}>!</span>
+                                                        <span style={{ fontSize: 14, color: '#94A3B8', lineHeight: 1.5 }}>{fmt(t)}</span>
+                                                    </div>
+                                                ))}
+                                            </SectionCard>
+                                        </div>
 
-                        <style>{`
+                                        <SectionCard icon="📊" title="Key Industry Trends" color="#3B82F6"
+                                            info="The biggest shifts currently happening in your industry. Knowing these trends helps you align your product, marketing, and strategy with where the market is heading.">
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                                                {report.industry.keyTrends?.map((t, i) => <Tag key={i} text={t} color="#3B82F6" />)}
+                                            </div>
+                                        </SectionCard>
+
+                                        <SectionCard icon="🎯" title="Your Positioning Strategy" color="#F59E0B"
+                                            info="How your business should be uniquely positioned in the market to stand out from competitors. Includes the specific market gaps you can own and win.">
+                                            <p style={{ fontSize: 14, lineHeight: 1.7, color: '#94A3B8' }}>{report.industry.uniquePositioning}</p>
+                                            {report.industry.marketGaps && (
+                                                <>
+                                                    <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', letterSpacing: '0.08em', marginTop: 16, marginBottom: 10 }}>MARKET GAPS TO EXPLOIT</div>
+                                                    {report.industry.marketGaps.map((g, i) => <Tag key={i} text={g} color="#F59E0B" />)}
+                                                </>
+                                            )}
+                                        </SectionCard>
+
+                                        <style>{`
               @media (max-width: 600px) {
                 .industry-stats { grid-template-columns: 1fr 1fr !important; }
                 .opp-threat-grid { grid-template-columns: 1fr !important; }
               }
             `}</style>
-                    </div>
-                )}
+                                    </div>
+                                )}
 
-                {/* ── PERSONAS TAB ── */}
-                {activeTab === 'personas' && (
-                    <div>
-                        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 24 }}>
-                            {report?.personas?.map((p, i) => <PersonaCard key={i} persona={p} index={i} />)}
-                        </div>
-                    </div>
-                )}
+                                {/* ── PERSONAS TAB ── */}
+                                {activeTab === 'personas' && (
+                                    <div>
+                                        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 24 }}>
+                                            {report?.personas?.map((p, i) => <PersonaCard key={i} persona={p} index={i} />)}
+                                        </div>
+                                    </div>
+                                )}
 
-                {/* ── BUYING TAB ── */}
-                {activeTab === 'buying' && report?.buying && (
-                    <div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }} className="buying-stats">
-                            {[
-                                { label: 'Decision Type', value: report.buying.decisionType || 'Considered', icon: '🧠', color: '#8B5CF6' },
-                                { label: 'Avg Decision Time', value: report.buying.avgDecisionTime || '3-7 days', icon: '⏱', color: '#3B82F6' },
-                                { label: 'Price Sensitivity', value: `${report.buying.priceSensitivity || 65}%`, icon: '💰', color: '#EF4444' },
-                            ].map(stat => (
-                                <div key={stat.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '20px', textAlign: 'center' }}>
-                                    <div style={{ fontSize: 26, marginBottom: 8 }}>{stat.icon}</div>
-                                    <div style={{ fontSize: 17, fontWeight: 800, color: stat.color, fontFamily: "'Inter Tight', sans-serif", marginBottom: 4 }}>{stat.value}</div>
-                                    <div style={{ fontSize: 12, color: '#64748B' }}>{stat.label}</div>
-                                </div>
-                            ))}
-                        </div>
+                                {/* ── BUYING TAB ── */}
+                                {activeTab === 'buying' && report?.buying && (
+                                    <div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }} className="buying-stats">
+                                            {[
+                                                { label: 'Decision Type', value: report.buying.decisionType || 'Considered', icon: '🧠', color: '#8B5CF6' },
+                                                { label: 'Avg Decision Time', value: report.buying.avgDecisionTime || '3-7 days', icon: '⏱', color: '#3B82F6' },
+                                                { label: 'Price Sensitivity', value: `${report.buying.priceSensitivity || 65}%`, icon: '💰', color: '#EF4444' },
+                                            ].map(stat => (
+                                                <div key={stat.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '20px', textAlign: 'center' }}>
+                                                    <div style={{ fontSize: 26, marginBottom: 8 }}>{stat.icon}</div>
+                                                    <div style={{ fontSize: 17, fontWeight: 800, color: stat.color, fontFamily: "'Inter Tight', sans-serif", marginBottom: 4 }}>{stat.value}</div>
+                                                    <div style={{ fontSize: 12, color: '#64748B' }}>{stat.label}</div>
+                                                </div>
+                                            ))}
+                                        </div>
 
-                        <div style={{ display: 'flex', gap: 20, marginBottom: 20, flexWrap: 'wrap' }}>
-                            <DonutChart value={report.buying.loyaltyScore || 72} label="Loyalty" color="#10B981" />
-                            <DonutChart value={report.buying.referralLikelihood || 58} label="Referral Rate" color="#8B5CF6" />
-                            <DonutChart value={100 - (report.buying.priceSensitivity || 65)} label="Price Flex" color="#F59E0B" />
-                        </div>
+                                        <div style={{ display: 'flex', gap: 20, marginBottom: 20, flexWrap: 'wrap' }}>
+                                            <DonutChart value={report.buying.loyaltyScore || 72} label="Loyalty" color="#10B981" />
+                                            <DonutChart value={report.buying.referralLikelihood || 58} label="Referral Rate" color="#8B5CF6" />
+                                            <DonutChart value={100 - (report.buying.priceSensitivity || 65)} label="Price Flex" color="#F59E0B" />
+                                        </div>
 
-                        <SectionCard icon="🛒" title="5-Stage Buying Journey" color="#EF4444"
-                            info="Traces the exact mental steps your customer goes through — from first realizing they have a problem to becoming a loyal repeat buyer. Each stage shows what action to take.">
-                            {report.buying.buyingStages?.map((b, i) => (
-                                <div key={i} style={{ padding: '14px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                    <div style={{ fontSize: 13, fontWeight: 700, color: '#EF4444', marginBottom: 4 }}>{b.stage}</div>
-                                    <p style={{ fontSize: 14, color: '#94A3B8', lineHeight: 1.6 }}>{b.action}</p>
-                                </div>
-                            ))}
-                        </SectionCard>
+                                        <SectionCard icon="🛒" title="5-Stage Buying Journey" color="#EF4444"
+                                            info="Traces the exact mental steps your customer goes through — from first realizing they have a problem to becoming a loyal repeat buyer. Each stage shows what action to take.">
+                                            {report.buying.buyingStages?.map((b, i) => (
+                                                <div key={i} style={{ padding: '14px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                                    <div style={{ fontSize: 13, fontWeight: 700, color: '#EF4444', marginBottom: 4 }}>{b.stage}</div>
+                                                    <p style={{ fontSize: 14, color: '#94A3B8', lineHeight: 1.6 }}>{b.action}</p>
+                                                </div>
+                                            ))}
+                                        </SectionCard>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }} className="buy-grid">
-                            <SectionCard icon="💡" title="Key Influencers" color="#F59E0B"
-                                info="The people, platforms, or content types that most influence your customer's purchase decision. Target these to amplify your reach and credibility.">
-                                {report.buying.keyInfluencers?.map((k, i) => <Tag key={i} text={k} color="#F59E0B" />)}
-                            </SectionCard>
-                            <SectionCard icon="🚧" title="Purchase Barriers" color="#EF4444"
-                                info="The specific objections, doubts, or friction points that stop customers from completing a purchase. Removing these barriers is one of the fastest ways to increase conversions.">
-                                {report.buying.barriers?.map((b, i) => <Tag key={i} text={b} color="#EF4444" />)}
-                            </SectionCard>
-                        </div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }} className="buy-grid">
+                                            <SectionCard icon="💡" title="Key Influencers" color="#F59E0B"
+                                                info="The people, platforms, or content types that most influence your customer's purchase decision. Target these to amplify your reach and credibility.">
+                                                {report.buying.keyInfluencers?.map((k, i) => <Tag key={i} text={k} color="#F59E0B" />)}
+                                            </SectionCard>
+                                            <SectionCard icon="🚧" title="Purchase Barriers" color="#EF4444"
+                                                info="The specific objections, doubts, or friction points that stop customers from completing a purchase. Removing these barriers is one of the fastest ways to increase conversions.">
+                                                {report.buying.barriers?.map((b, i) => <Tag key={i} text={b} color="#EF4444" />)}
+                                            </SectionCard>
+                                        </div>
 
-                        {report.buying.pricingPsychology && (
-                            <SectionCard icon="💳" title="Pricing Psychology" color="#10B981"
-                                info="How to frame and present your pricing so customers feel they are getting great value. Small changes in how you show price can dramatically increase your conversion rate.">
-                                <p style={{ fontSize: 14, lineHeight: 1.7, color: '#94A3B8' }}>{report.buying.pricingPsychology}</p>
-                            </SectionCard>
-                        )}
+                                        {report.buying.pricingPsychology && (
+                                            <SectionCard icon="💳" title="Pricing Psychology" color="#10B981"
+                                                info="How to frame and present your pricing so customers feel they are getting great value. Small changes in how you show price can dramatically increase your conversion rate.">
+                                                <p style={{ fontSize: 14, lineHeight: 1.7, color: '#94A3B8' }}>{report.buying.pricingPsychology}</p>
+                                            </SectionCard>
+                                        )}
 
-                        <style>{`
+                                        <style>{`
               @media (max-width: 600px) {
                 .buying-stats { grid-template-columns: 1fr 1fr !important; }
                 .buy-grid { grid-template-columns: 1fr !important; }
               }
             `}</style>
-                    </div>
-                )}
+                                    </div>
+                                )}
 
-                {/* ── ACTION PLAN TAB ── */}
-                {activeTab === 'plan' && report?.actionPlan && (
-                    <div>
-                        {report.actionPlan.immediateActions && (
-                            <SectionCard icon="⚡" title="Top Priority Actions" color="#FF6B35" badge="Quick Wins"
-                                info="The 3 highest-impact actions you should take immediately, ranked by effort vs. impact. These are your fastest path to visible results in the next 7 days.">
-                                {report.actionPlan.immediateActions.map((a, i) => (
-                                    <div key={i} style={{
-                                        display: 'flex', gap: 16, padding: '16px', marginBottom: 10,
-                                        background: 'rgba(255,107,53,0.04)', border: '1px solid rgba(255,107,53,0.12)',
-                                        borderRadius: 12, alignItems: 'flex-start'
+                                {/* ── ACTION PLAN TAB ── */}
+                                {activeTab === 'plan' && report?.actionPlan && (
+                                    <div>
+                                        {report.actionPlan.immediateActions && (
+                                            <SectionCard icon="⚡" title="Top Priority Actions" color="#FF6B35" badge="Quick Wins"
+                                                info="The 3 highest-impact actions you should take immediately, ranked by effort vs. impact. These are your fastest path to visible results in the next 7 days.">
+                                                {report.actionPlan.immediateActions.map((a, i) => (
+                                                    <div key={i} style={{
+                                                        display: 'flex', gap: 16, padding: '16px', marginBottom: 10,
+                                                        background: 'rgba(255,107,53,0.04)', border: '1px solid rgba(255,107,53,0.12)',
+                                                        borderRadius: 12, alignItems: 'flex-start'
+                                                    }}>
+                                                        <div style={{
+                                                            width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+                                                            background: 'rgba(255,107,53,0.15)', display: 'flex', alignItems: 'center',
+                                                            justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#FF6B35'
+                                                        }}>#{a.priority}</div>
+                                                        <div style={{ flex: 1 }}>
+                                                            <div style={{ fontSize: 14, fontWeight: 600, color: '#F1F5F9', marginBottom: 4 }}>{a.action}</div>
+                                                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                                                <span style={{ fontSize: 11, color: '#10B981', background: 'rgba(16,185,129,0.1)', padding: '2px 8px', borderRadius: 100 }}>Impact: {a.impact}</span>
+                                                                <span style={{ fontSize: 11, color: '#F59E0B', background: 'rgba(245,158,11,0.1)', padding: '2px 8px', borderRadius: 100 }}>Effort: {a.effort}</span>
+                                                                <span style={{ fontSize: 11, color: '#94A3B8', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: 100 }}>{a.timeframe}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </SectionCard>
+                                        )}
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginBottom: 16 }} className="weeks-grid">
+                                            {[
+                                                { week: 'Week 1', items: report.actionPlan.week1, color: '#3B82F6' },
+                                                { week: 'Week 2', items: report.actionPlan.week2, color: '#8B5CF6' },
+                                                { week: 'Week 3', items: report.actionPlan.week3, color: '#10B981' },
+                                                { week: 'Week 4', items: report.actionPlan.week4, color: '#F59E0B' },
+                                            ].map(w => w.items && (
+                                                <div key={w.week} style={{
+                                                    background: 'rgba(255,255,255,0.03)', border: `1px solid ${w.color}20`,
+                                                    borderRadius: 16, padding: '18px'
+                                                }}>
+                                                    <div style={{ fontSize: 13, fontWeight: 700, color: w.color, marginBottom: 12 }}>{w.week}</div>
+                                                    {w.items.map((item, i) => (
+                                                        <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                                                            <span style={{ color: w.color, flexShrink: 0, fontSize: 12, marginTop: 1 }}>✓</span>
+                                                            <span style={{ fontSize: 13, color: '#94A3B8', lineHeight: 1.5 }}>{item}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {report.actionPlan.kpis && (
+                                            <SectionCard icon="📏" title="KPIs to Track" color="#10B981"
+                                                info="The Key Performance Indicators you should measure to know if your 30-day action plan is working. These numbers act as your progress report.">
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                                    {report.actionPlan.kpis.map((k, i) => <Tag key={i} text={k} color="#10B981" />)}
+                                                </div>
+                                            </SectionCard>
+                                        )}
+
+                                        {report.actionPlan.expectedOutcome && (
+                                            <SectionCard icon="🎯" title="Expected Outcome (30 days)" color="#FF6B35"
+                                                info="What realistic results you should expect after consistently applying this action plan for 30 days. Use this as a benchmark to measure your progress.">
+                                                <p style={{ fontSize: 15, lineHeight: 1.7, color: '#94A3B8' }}>{report.actionPlan.expectedOutcome}</p>
+                                            </SectionCard>
+                                        )}
+
+                                        <style>{`
+              @media (max-width: 600px) { .weeks-grid { grid-template-columns: 1fr !important; } }
+              @media (max-width: 600px) { .psych-grid { grid-template-columns: 1fr !important; } }
+              @media (max-width: 900px) { .dashboard-sidebar { display: none !important; } }
+            `}</style>
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
+
+                    {/* --- 💎 PREMIMUM SLEEK AI ADVISOR (GEN-CLONE) --- */}
+                    {activeTab === 'chat' && (
+                        <div style={{
+                            height: 'calc(100vh - 60px)', display: 'flex', background: '#0A0A0F',
+                            position: 'relative', overflow: 'hidden'
+                        }}>
+
+
+                            {/* Internal AI Sidebar (History & Context) */}
+                            <div style={{
+                                width: 260, borderRight: '1px solid rgba(255,255,255,0.03)',
+                                background: '#0A0A0F', display: 'flex', flexDirection: 'column',
+                                padding: '24px 16px'
+                            }} className="advisor-sidebar">
+                                <button
+                                    onClick={handleNewChat}
+                                    style={{
+                                        width: '100%', padding: '12px', borderRadius: 12,
+                                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                                        color: '#FFFFFF', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                                        display: 'flex', alignItems: 'center', gap: 10, transition: 'all 0.2s',
+                                        marginBottom: 32
+                                    }}
+                                    onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                    onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                                >
+                                    <span style={{ fontSize: 18 }}>+</span> New Session
+                                </button>
+
+                                <div style={{ fontSize: 11, color: '#444', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 16, paddingLeft: 8 }}>SESSION CONTEXT</div>
+                                <div style={{
+                                    padding: '12px', borderRadius: 12, background: 'rgba(197, 160, 89, 0.05)',
+                                    border: '1px solid rgba(197, 160, 89, 0.1)', color: '#C5A059',
+                                    fontSize: 12, lineHeight: 1.5, marginBottom: 24
+                                }}>
+                                    <div style={{ fontWeight: 700, marginBottom: 4 }}>PROJECT ACTIVE</div>
+                                    <div style={{ opacity: 0.8 }}>{form?.businessName || 'Current Analysis'}</div>
+                                    <div style={{ fontSize: 10, opacity: 0.5, marginTop: 8 }}>Grounded by intelligence report data.</div>
+                                </div>
+
+                                <div style={{ fontSize: 11, color: '#444', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 16, paddingLeft: 8 }}>PLATFORM INTELLIGENCE</div>
+                                <div style={{
+                                    padding: '12px', borderRadius: 12, background: 'rgba(255,107,53,0.05)',
+                                    border: '1px solid rgba(255,107,53,0.1)', color: '#FF6B35',
+                                    fontSize: 12, display: 'flex', alignItems: 'center', gap: 10,
+                                    cursor: 'default', marginBottom: 8, animation: 'glow-pulse 3s infinite'
+                                }}>
+                                    <span style={{ color: '#FF6B35', fontSize: 14 }}>●</span> 
+                                    <div style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {chatHistory.find(m => m.role === 'user')?.content?.substring(0, 20) || 'Active Session'}
+                                    </div>
+                                </div>
+                                
+                                {pastSessions.map((s, idx) => (
+                                    <div 
+                                        key={idx}
+                                        onClick={() => loadArchive(idx)}
+                                        style={{
+                                            padding: '10px 12px', borderRadius: 10, background: 'transparent',
+                                            color: '#666', fontSize: 12, display: 'flex', alignItems: 'center', gap: 10,
+                                            cursor: 'pointer', transition: 'all 0.2s', marginBottom: 4,
+                                            border: '1px solid transparent', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                                        }}
+                                        onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#888'; }}
+                                        onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.color = '#666'; }}
+                                    >
+                                        <span style={{ opacity: 0.5 }}>○</span> {s.title}
+                                    </div>
+                                ))}
+
+                                {pastSessions.length === 0 && (
+                                    <div style={{
+                                        padding: '12px', borderRadius: 12, background: 'transparent',
+                                        color: '#333', fontSize: 11, display: 'flex', alignItems: 'center', gap: 10,
+                                        cursor: 'default', opacity: 0.4, fontStyle: 'italic'
                                     }}>
-                                        <div style={{
-                                            width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-                                            background: 'rgba(255,107,53,0.15)', display: 'flex', alignItems: 'center',
-                                            justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#FF6B35'
-                                        }}>#{a.priority}</div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontSize: 14, fontWeight: 600, color: '#F1F5F9', marginBottom: 4 }}>{a.action}</div>
-                                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                                <span style={{ fontSize: 11, color: '#10B981', background: 'rgba(16,185,129,0.1)', padding: '2px 8px', borderRadius: 100 }}>Impact: {a.impact}</span>
-                                                <span style={{ fontSize: 11, color: '#F59E0B', background: 'rgba(245,158,11,0.1)', padding: '2px 8px', borderRadius: 100 }}>Effort: {a.effort}</span>
-                                                <span style={{ fontSize: 11, color: '#94A3B8', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: 100 }}>{a.timeframe}</span>
+                                        <span>○</span> Empty Archive
+                                    </div>
+                                )}
+                                <div style={{ marginBottom: 24 }} />
+
+
+                                <div style={{ fontSize: 11, color: '#444', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 16, paddingLeft: 8 }}>MODEL</div>
+                                <div style={{
+                                    padding: '12px', borderRadius: 12, background: 'rgba(255,255,255,0.02)',
+                                    border: '1px solid rgba(255,255,255,0.05)', color: '#888',
+                                    fontSize: 12, display: 'flex', alignItems: 'center', gap: 10
+                                }}>
+                                    <span style={{ color: '#10B981' }}>●</span> Intelligence Edge v4.7
+                                </div>
+                            </div>
+
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                                <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }} className="custom-scrollbar">
+                                {chatHistory.length <= 1 ? (
+                                    /* --- 🌟 Claude-Inspired Premium Startup View --- */
+                                    <div style={{
+                                        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                        padding: '0 40px', animation: 'fade-in 0.8s ease', maxWidth: 840, margin: '0 auto', width: '100%'
+                                    }}>
+                                        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+                                            <div style={{ 
+                                                width: 48, height: 48, borderRadius: 16, background: 'rgba(197, 160, 89, 0.1)', 
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px',
+                                                border: '1px solid rgba(197, 160, 89, 0.2)', fontSize: 24
+                                            }}>✨</div>
+                                            <h2 style={{
+                                                fontFamily: "'Inter Tight', sans-serif", fontSize: 32, color: '#FFFFFF',
+                                                fontWeight: 600, marginBottom: 12, letterSpacing: '-0.02em', lineHeight: 1.2
+                                            }}>
+                                                How can {form?.businessName || 'the project'} grow today?
+                                            </h2>
+                                            <p style={{ fontSize: 16, color: '#666666', fontWeight: 400, maxWidth: 460, margin: '0 auto' }}>
+                                                Your AI Business Advisor is ready to draft strategies, copy, and action plans.
+                                            </p>
+                                        </div>
+
+                                        {/* Premium Pill Input */}
+                                        <div style={{ width: '100%', position: 'relative' }}>
+                                            <div style={{
+                                                background: '#14141A', borderRadius: 24, padding: '12px 12px 12px 24px',
+                                                border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+                                                display: 'flex', alignItems: 'center', gap: 16, transition: 'all 0.3s ease'
+                                            }} onFocusCapture={e => e.currentTarget.style.borderColor = 'rgba(197, 160, 89, 0.4)'} onBlurCapture={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'}>
+                                                <textarea
+                                                    value={chatInput}
+                                                    onChange={e => setChatInput(e.target.value)}
+                                                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleChatSubmit(e); } }}
+                                                    placeholder="Ask anything about your strategy..."
+                                                    style={{
+                                                        flex: 1, background: 'transparent', border: 'none', color: '#FFFFFF',
+                                                        fontSize: 15, outline: 'none', resize: 'none', height: 26,
+                                                        padding: '4px 0', fontFamily: 'Inter Tight, sans-serif'
+                                                    }}
+                                                />
+                                                <button
+                                                    onClick={handleChatSubmit}
+                                                    disabled={isChatting || !chatInput.trim()}
+                                                    style={{
+                                                        background: chatInput.trim() ? '#C5A059' : 'rgba(255,255,255,0.03)',
+                                                        color: chatInput.trim() ? '#000' : '#444', border: 'none', 
+                                                        width: 40, height: 40, borderRadius: 14, fontSize: 18, fontWeight: 700,
+                                                        cursor: chatInput.trim() ? 'pointer' : 'not-allowed', transition: 'all 0.3s',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                    }}
+                                                >
+                                                    ↑
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Suggested Strategic Prompts Grid */}
+                                        <div style={{ marginTop: 48, width: '100%' }}>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+                                                {[
+                                                    { id: 'copy', icon: '📝', label: 'Draft Ad Copy', desc: 'High-converting ads for your persona.', prompt: 'Based on my target persona and report, please draft 3 high-converting ad copies for Meta/Google Ads.' },
+                                                    { id: 'plan', icon: '🎯', label: 'Action Breakdown', desc: 'Turn strategy into daily execution tasks.', prompt: 'Break down the first 7 days of my action plan into specific, daily execution tasks for my team.' },
+                                                    { id: 'email', icon: '✉️', label: 'Welcome Sequence', desc: 'Craft a psychology-backed email flow.', prompt: 'Draft a 3-part welcome email sequence that leverage the psychological triggers identified in my report.' },
+                                                    { id: 'analyst', icon: '🔍', label: 'Find Gaps', desc: 'Identify where competitors are weakest.', prompt: 'Looking at my competitor analysis, what are the top 3 specific gaps I can exploit right now?' }
+                                                ].map(btn => (
+                                                    <div 
+                                                        key={btn.id} 
+                                                        onClick={() => {
+                                                            setChatInput(btn.prompt);
+                                                            // Trigger handleChatSubmit after a tiny delay so the input state updates
+                                                            setTimeout(() => {
+                                                                const event = { key: 'Enter', preventDefault: () => {} };
+                                                                handleChatSubmit(event);
+                                                            }, 50);
+                                                        }}
+                                                        style={{
+                                                            background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)',
+                                                            padding: '20px', borderRadius: 20, cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                            textAlign: 'left', display: 'flex', gap: 16, alignItems: 'center'
+                                                        }} 
+                                                        onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(197, 160, 89, 0.2)'; e.currentTarget.style.transform = 'translateY(-2px)'; }} 
+                                                        onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.04)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                                                    >
+                                                        <div style={{ fontSize: 24 }}>{btn.icon}</div>
+                                                        <div>
+                                                            <div style={{ fontSize: 13, fontWeight: 600, color: '#FFFFFF', marginBottom: 2 }}>{btn.label}</div>
+                                                            <div style={{ fontSize: 11, color: '#666666', lineHeight: 1.4 }}>{btn.desc}</div>
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
                                     </div>
-                                ))}
-                            </SectionCard>
-                        )}
-
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginBottom: 16 }} className="weeks-grid">
-                            {[
-                                { week: 'Week 1', items: report.actionPlan.week1, color: '#3B82F6' },
-                                { week: 'Week 2', items: report.actionPlan.week2, color: '#8B5CF6' },
-                                { week: 'Week 3', items: report.actionPlan.week3, color: '#10B981' },
-                                { week: 'Week 4', items: report.actionPlan.week4, color: '#F59E0B' },
-                            ].map(w => w.items && (
-                                <div key={w.week} style={{
-                                    background: 'rgba(255,255,255,0.03)', border: `1px solid ${w.color}20`,
-                                    borderRadius: 16, padding: '18px'
-                                }}>
-                                    <div style={{ fontSize: 13, fontWeight: 700, color: w.color, marginBottom: 12 }}>{w.week}</div>
-                                    {w.items.map((item, i) => (
-                                        <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                                            <span style={{ color: w.color, flexShrink: 0, fontSize: 12, marginTop: 1 }}>✓</span>
-                                            <span style={{ fontSize: 13, color: '#94A3B8', lineHeight: 1.5 }}>{item}</span>
+                                ) : (
+                                    /* --- 💬 Streamlined Conversation View --- */
+                                    <div style={{ flex: 1, padding: '40px 0', overflowY: 'auto' }}>
+                                        <div style={{ maxWidth: 740, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 48 }}>
+                                            {chatHistory.map((m, i) => (
+                                                <div key={i} style={{ 
+                                                    display: 'flex', gap: 24, 
+                                                    animation: `message-slide-up 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards`,
+                                                    opacity: 0
+                                                }}>
+                                                    <div style={{
+                                                        width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                                                        background: m.role === 'assistant' ? '#1A1A1A' : '#333333',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
+                                                        border: '1px solid rgba(255,255,255,0.03)'
+                                                    }}>{m.role === 'assistant' ? '✨' : (user?.displayName?.[0] || 'U')}</div>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ fontSize: 11, fontWeight: 700, color: '#555555', marginBottom: 6, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                                                            {m.role === 'assistant' ? 'Advisor' : (user?.displayName || 'You')}
+                                                        </div>
+                                                        <div style={{ color: '#D1D1D1', fontSize: 14, lineHeight: 1.7, fontWeight: 400 }}>
+                                                            {m.role === 'assistant' ? (
+                                                                <div className="chat-markdown aesthetic-view">
+                                                                    <ReactMarkdown>{m.content}</ReactMarkdown>
+                                                                </div>
+                                                            ) : (
+                                                                <div style={{ whiteSpace: 'pre-wrap' }}>{m.content}</div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {isChatting && (
+                                                <div style={{ display: 'flex', gap: 24 }}>
+                                                    <div style={{ width: 32, height: 32, borderRadius: 8, background: '#1A1A1A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>✨</div>
+                                                    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                                                        <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#444444', animation: 'dot-pulse 1.5s infinite' }} />
+                                                        <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#444444', animation: 'dot-pulse 1.5s infinite 0.3s' }} />
+                                                        <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#444444', animation: 'dot-pulse 1.5s infinite 0.6s' }} />
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                    ))}
+                                    </div>
+                                )}
+                                </div> {/* custom-scrollbar */}
+
+                                {/* Streamlined Floating Input (Chat Mode) */}
+                                {chatHistory.length > 1 && (
+                                    <div style={{ padding: '24px 40px 48px 40px', background: 'linear-gradient(to top, #0A0A0F 85%, transparent)' }}>
+                                        <div style={{ maxWidth: 740, margin: '0 auto' }}>
+                                            <div style={{
+                                                background: '#1A1A1A', borderRadius: 16, padding: '10px 18px',
+                                                border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+                                                display: 'flex', alignItems: 'center', gap: 14
+                                            }}>
+                                                <button style={{ background: 'transparent', border: 'none', color: '#555555', fontSize: 20, cursor: 'pointer' }}>+</button>
+                                                <input
+                                                    type="text"
+                                                    value={chatInput}
+                                                    onChange={e => setChatInput(e.target.value)}
+                                                    onKeyDown={e => { if (e.key === 'Enter') handleChatSubmit(e); }}
+                                                    placeholder="Type your message..."
+                                                    style={{
+                                                        flex: 1, background: 'transparent', border: 'none', color: '#FFFFFF',
+                                                        fontSize: 15, outline: 'none', padding: '12px 0'
+                                                    }}
+                                                />
+                                                <button
+                                                    onClick={handleChatSubmit}
+                                                    disabled={isChatting || !chatInput.trim()}
+                                                    style={{
+                                                        background: chatInput.trim() ? '#E8E8E8' : 'transparent',
+                                                        color: '#000', border: 'none', width: 28, height: 28, borderRadius: '50%',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: chatInput.trim() ? 1 : 0.1,
+                                                        cursor: chatInput.trim() ? 'pointer' : 'not-allowed', fontSize: 16
+                                                    }}
+                                                >↑</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <style>{`
+                             @keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+                             @keyframes message-slide-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+                             @keyframes glow-pulse { 0% { box-shadow: 0 0 0px rgba(255,107,53,0); } 50% { box-shadow: 0 0 15px rgba(255,107,53,0.1); } 100% { box-shadow: 0 0 0px rgba(255,107,53,0); } }
+                             @keyframes dot-pulse { 0% { opacity: 0.2; } 50% { opacity: 1; } 100% { opacity: 0.2; } }
+                             .aesthetic-view h2 { font-size: 1.25em; margin-top: 28px; color: #FFFFFF; margin-bottom: 10px; font-weight: 600; }
+                             .aesthetic-view p { margin-bottom: 16px; color: #BBBBBB; font-family: 'Inter Tight', sans-serif; }
+                             .aesthetic-view { font-family: 'Inter Tight', sans-serif; font-size: 0.95em; line-height: 1.7; }
+                             .aesthetic-view strong { color: #FFFFFF; font-weight: 700; font-style: normal; }
+                             .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+                             .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.04); borderRadius: 10px; }
+                             .advisor-sidebar div, .advisor-sidebar button { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+                             @media (max-width: 900px) { .advisor-sidebar { display: none !important; } }
+                            `}</style>
                                 </div>
-                            ))}
-                        </div>
-
-                        {report.actionPlan.kpis && (
-                            <SectionCard icon="📏" title="KPIs to Track" color="#10B981"
-                                info="The Key Performance Indicators you should measure to know if your 30-day action plan is working. These numbers act as your progress report.">
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                                    {report.actionPlan.kpis.map((k, i) => <Tag key={i} text={k} color="#10B981" />)}
-                                </div>
-                            </SectionCard>
+                            </div>
                         )}
-
-                        {report.actionPlan.expectedOutcome && (
-                            <SectionCard icon="🎯" title="Expected Outcome (30 days)" color="#FF6B35"
-                                info="What realistic results you should expect after consistently applying this action plan for 30 days. Use this as a benchmark to measure your progress.">
-                                <p style={{ fontSize: 15, lineHeight: 1.7, color: '#94A3B8' }}>{report.actionPlan.expectedOutcome}</p>
-                            </SectionCard>
-                        )}
-
-                        <style>{`
-              @media (max-width: 600px) { .weeks-grid { grid-template-columns: 1fr !important; } }
-              @media (max-width: 600px) { .psych-grid { grid-template-columns: 1fr !important; } }
-            `}</style>
-                    </div>
-                )}
+                </div>
             </div>
         </div>
     );

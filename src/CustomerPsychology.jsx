@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 
 const DARK = "#F9FAFB";
 const CARD = "#FFFFFF";
-const WHITE = "#000000";
-const MUTED = "#4B5563";
+const WHITE = "#111827";
+const MUTED = "#6B7280";
 const ORANGE = "#FF6B35";
 const BORDER = "#E5E7EB";
 
@@ -17,8 +17,8 @@ export default function CustomerPsychology({ business, personas }) {
     // If there is no business data, force them back
     if (!business) {
         return (
-            <div style={{ padding: "40px 20px 60px", maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
-                <h1 style={{ fontSize: 24, fontWeight: 800, color: WHITE, marginBottom: 16 }}>Project Setup Required</h1>
+            <div style={{ display: "flex", flexDirection: "column", height: "100vh", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "20px" }}>
+                <h1 style={{ fontSize: 22, fontWeight: 400, color: WHITE, marginBottom: 16 }}>Project Setup Required</h1>
                 <p style={{ color: MUTED, marginBottom: 32 }}>You must complete the Setup Wizard and define your Customer Personas before running the Psychology Audit.</p>
                 <button
                     onClick={() => navigate("/journey")}
@@ -29,7 +29,7 @@ export default function CustomerPsychology({ business, personas }) {
                         background: ORANGE,
                         color: "#FFFFFF",
                         fontSize: 15,
-                        fontWeight: 800,
+                        fontWeight: 400,
                         cursor: "pointer",
                     }}
                 >
@@ -39,7 +39,7 @@ export default function CustomerPsychology({ business, personas }) {
         );
     }
 
-    const personaStr = personas?.[0] ? `Name: ${personas[0].name}, Archetype: ${personas[0].archetype}, Pain: ${personas[0].painPoints[0]}` : "General Audience";
+    const personaStr = personas?.[0] ? `Name: ${personas[0].name}, Archetype: ${personas[0].archetype}, Biggest Fear: ${personas[0].biggestFear}` : "General Audience";
 
     async function generateReport() {
         setLoading(true);
@@ -74,24 +74,44 @@ Please generate a deep-dive Customer Psychology Audit strictly returning a raw J
                 })
             });
 
-            const data = await res.json();
-            const txt = data.content?.[0]?.text || "";
-            let parsed = null;
+            let responseText;
             try {
-                parsed = JSON.parse(txt);
+                responseText = await res.text();
             } catch (err) {
-                const match = txt.match(/\{[\s\S]*\}/);
-                if (match) parsed = JSON.parse(match[0]);
+                throw new Error("Could not read response from server.");
             }
 
-            if (parsed && parsed.coreDesires) {
-                setReport(parsed);
+            let json;
+            try {
+                json = JSON.parse(responseText);
+            } catch (err) {
+                console.error("Raw response that failed JSON parse:", responseText);
+                throw new Error(responseText.includes("Cannot GET") || responseText.includes("<html") ? "API server offline. Please run `node server.js` in a new terminal tab." : "The server returned an invalid response.");
+            }
+
+            if (!res.ok || json.error) {
+                const apiError = typeof json.error === "object" ? json.error.message || JSON.stringify(json.error) : (json.message || json.error || "API request failed");
+                throw new Error(apiError);
+            }
+
+            const raw = json.content?.[0]?.text || "";
+            const firstBrace = raw.indexOf("{");
+            const lastBrace = raw.lastIndexOf("}");
+
+            if (firstBrace !== -1 && lastBrace !== -1) {
+                const cleanJsonStr = raw.substring(firstBrace, lastBrace + 1);
+                const parsed = JSON.parse(cleanJsonStr);
+                if (parsed && parsed.coreDesires) {
+                    setReport(parsed);
+                } else {
+                    throw new Error("Failed to validate psychology data structure.");
+                }
             } else {
-                throw new Error("Failed to parse psychology data.");
+                throw new Error("Failed to parse AI output into JSON.");
             }
         } catch (err) {
             console.error(err);
-            setError("Could not generate report. Please try again.");
+            setError(err.message || "Could not generate report. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -108,26 +128,26 @@ Please generate a deep-dive Customer Psychology Audit strictly returning a raw J
                         border: `1px solid ${BORDER}`,
                         background: "transparent",
                         color: MUTED,
-                        fontSize: 12,
+                        fontSize: 14,
                         cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
                         gap: 8,
-                        fontWeight: 600
+                        fontWeight: 400
                     }}
                 >
                     ← Back to Dashboard
                 </button>
             </div>
 
-            <h1 style={{ fontSize: 32, fontWeight: 900, color: WHITE, marginBottom: 8 }}>Customer Psychology Audit</h1>
-            <p style={{ color: MUTED, marginBottom: 40, fontSize: 16 }}>Understand what truly drives your customers to buy, hesitate, or leave.</p>
+            <h1 style={{ fontSize: 22, fontWeight: 400, color: WHITE, marginBottom: 8 }}>Customer Psychology Audit</h1>
+            <p style={{ color: MUTED, marginBottom: 40, fontSize: 15 }}>Understand what truly drives your customers to buy, hesitate, or leave.</p>
 
             {!report && !loading && (
                 <div style={{ padding: 32, background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, textAlign: "center" }}>
                     <div style={{ fontSize: 40, marginBottom: 16 }}>🧠</div>
-                    <h2 style={{ fontSize: 20, fontWeight: 800, color: WHITE, marginBottom: 12 }}>Ready to analyze {personas?.[0]?.name || "your customers"}?</h2>
-                    <p style={{ color: MUTED, fontSize: 14, marginBottom: 24, maxWidth: 400, margin: "0 auto 24px" }}>We'll use the Business profile and Personas generated in your Journey Audit to extract their deepest psychological triggers.</p>
+                    <h2 style={{ fontSize: 18, fontWeight: 400, color: WHITE, marginBottom: 12 }}>Ready to analyze {personas?.[0]?.name || "your customers"}?</h2>
+                    <p style={{ color: MUTED, fontSize: 15, marginBottom: 24, maxWidth: 400, margin: "0 auto 24px" }}>We'll use the Business profile and Personas generated in your Journey Audit to extract their deepest psychological triggers.</p>
                     <button
                         onClick={generateReport}
                         style={{
@@ -137,49 +157,49 @@ Please generate a deep-dive Customer Psychology Audit strictly returning a raw J
                             background: ORANGE,
                             color: "#FFFFFF",
                             fontSize: 15,
-                            fontWeight: 800,
+                            fontWeight: 400,
                             cursor: "pointer",
                         }}
                     >
                         Generate Psychology Report →
                     </button>
-                    {error && <div style={{ color: "#ef4444", marginTop: 16, fontSize: 14 }}>{error}</div>}
+                    {error && <div style={{ color: "#ef4444", marginTop: 16, fontSize: 15 }}>{error}</div>}
                 </div>
             )}
 
             {loading && (
                 <div style={{ textAlign: "center", padding: "60px 20px" }}>
                     <div style={{ fontSize: 48, animation: "spin 2s linear infinite", marginBottom: 16 }}>⏳</div>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: WHITE }}>Extracting Psychological Triggers...</div>
-                    <div style={{ fontSize: 14, color: MUTED, marginTop: 8 }}>Analyzing {business?.businessName}'s target audience...</div>
+                    <div style={{ fontSize: 18, fontWeight: 400, color: WHITE }}>Extracting Psychological Triggers...</div>
+                    <div style={{ fontSize: 15, color: MUTED, marginTop: 8 }}>Analyzing {business?.businessName}'s target audience...</div>
                 </div>
             )}
 
             {report && !loading && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                     <div style={{ padding: 24, background: CARD, borderRadius: 20, border: `1px solid ${BORDER}` }}>
-                        <h2 style={{ fontSize: 18, fontWeight: 800, color: ORANGE, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>✨ Core Desires</h2>
+                        <h2 style={{ fontSize: 18, fontWeight: 400, color: ORANGE, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>✨ Core Desires</h2>
                         <ul style={{ paddingLeft: 20, margin: 0, color: WHITE, display: "flex", flexDirection: "column", gap: 12 }}>
                             {report.coreDesires.map((d, i) => <li key={i} style={{ lineHeight: 1.5 }}>{d}</li>)}
                         </ul>
                     </div>
 
                     <div style={{ padding: 24, background: CARD, borderRadius: 20, border: `1px solid ${BORDER}` }}>
-                        <h2 style={{ fontSize: 18, fontWeight: 800, color: "#ef4444", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>🚨 Biggest Fears / Hesitations</h2>
+                        <h2 style={{ fontSize: 18, fontWeight: 400, color: "#ef4444", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>🚨 Biggest Fears / Hesitations</h2>
                         <ul style={{ paddingLeft: 20, margin: 0, color: WHITE, display: "flex", flexDirection: "column", gap: 12 }}>
                             {report.biggestFears.map((d, i) => <li key={i} style={{ lineHeight: 1.5 }}>{d}</li>)}
                         </ul>
                     </div>
 
                     <div style={{ padding: 24, background: CARD, borderRadius: 20, border: `1px solid ${BORDER}` }}>
-                        <h2 style={{ fontSize: 18, fontWeight: 800, color: "#22c55e", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>🎯 Buying Triggers</h2>
+                        <h2 style={{ fontSize: 18, fontWeight: 400, color: "#22c55e", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>🎯 Buying Triggers</h2>
                         <ul style={{ paddingLeft: 20, margin: 0, color: WHITE, display: "flex", flexDirection: "column", gap: 12 }}>
                             {report.buyingTriggers.map((d, i) => <li key={i} style={{ lineHeight: 1.5 }}>{d}</li>)}
                         </ul>
                     </div>
 
                     <div style={{ padding: 24, background: `linear-gradient(145deg, ${CARD}, #FFF5F0)`, borderRadius: 20, border: `1px solid ${ORANGE}50` }}>
-                        <h2 style={{ fontSize: 18, fontWeight: 800, color: WHITE, marginBottom: 12 }}>Immediate Conversion Strategy</h2>
+                        <h2 style={{ fontSize: 18, fontWeight: 400, color: WHITE, marginBottom: 12 }}>Immediate Conversion Strategy</h2>
                         <p style={{ color: MUTED, lineHeight: 1.6, fontSize: 15 }}>{report.conversionAdvice}</p>
                     </div>
 
@@ -193,7 +213,7 @@ Please generate a deep-dive Customer Psychology Audit strictly returning a raw J
                             background: "transparent",
                             color: WHITE,
                             fontSize: 15,
-                            fontWeight: 700,
+                            fontWeight: 400,
                             cursor: "pointer",
                             width: "100%",
                         }}
