@@ -451,8 +451,15 @@ export default function ReportDashboard({ user }) {
     const [isChatting, setIsChatting] = useState(false);
     const [pastSessions, setPastSessions] = useState([]);
 
-    // Blog Writer State
-    const [blogSettings, setBlogSettings] = useState({ keywords: '', wordCount: '800', tone: 'Professional & Authoritative' });
+    // Blog Writer State (Professional SEO AI Writer)
+    const [blogSettings, setBlogSettings] = useState({ 
+        keywords: '', 
+        wordCount: '1200', 
+        tone: 'Professional & Authoritative',
+        coreBrief: '',
+        eeatFocus: '',
+        geoOptimized: true
+    });
     const [isGeneratingBlog, setIsGeneratingBlog] = useState(false);
     const [generatedBlog, setGeneratedBlog] = useState(null);
     const [seoScore, setSeoScore] = useState(null);
@@ -844,18 +851,23 @@ Directive: Use the data above to answer specifically. If the user asks for ad co
                         content: `You are an expert Content Strategist & SEO Specialist. Write a high-quality blog post.
                         
                         BUSINESS CONTEXT:
-                        - Name: ${form?.businessName}
-                        - Industry: ${form?.industry}
-                        - Personas: ${report?.personas?.map(p => p.name).join(', ')}
+                        - Business: ${form?.businessName} (${form?.industry})
                         - Persona Pain Points: ${report?.personas?.map(p => p.painPoints?.join(', ')).join('; ')}
                         - Psychological Triggers: ${report?.psychology?.cognitiveBiases?.map(b => b.bias).join(', ')}
                         
                         REQUIREMENTS:
-                        - Keywords: ${blogSettings.keywords}
+                        - Primary Keywords: ${blogSettings.keywords}
                         - Target Length: ${blogSettings.wordCount} words
                         - Tone: ${blogSettings.tone}
-                        - Format: User-First Creative Storytelling
-                        - Standards: E-E-A-T and GEO Optimization.
+                        - Core Brief/Intent: ${blogSettings.coreBrief}
+                        - Specific E-E-A-T Authority Point: ${blogSettings.eeatFocus}
+                        - GEO Optimization: ${blogSettings.geoOptimized ? 'High (Optimize for Perplexity, SearchGPT, and Gemini parsing logic)' : 'Standard'}
+                        
+                        STRATEGY:
+                        1. Use User-First Creative Storytelling to hook the reader. 
+                        2. Integrate the E-E-A-T focus naturally to establish immediate authority.
+                        3. Structure for "Generative Engine Optimization" (Scannable headers, direct answers, semantic relevance).
+                        4. Follow Rank Math SEO standards.
                         
                         IMPORTANT: Use these exact tags to structure your response.
                         
@@ -978,6 +990,10 @@ Directive: Use the data above to answer specifically. If the user asks for ad co
                  .aesthetic-view p { margin-bottom: 16px; color: #BBBBBB; font-family: 'Inter Tight', sans-serif; }
                  .aesthetic-view { font-family: 'Inter Tight', sans-serif; font-size: 0.95em; line-height: 1.7; }
                  .aesthetic-view strong { color: #FFFFFF; font-weight: 700; font-style: normal; }
+                 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+                 .markdown-content h1, .markdown-content h2, .markdown-content h3 { color: #FFFFFF; font-weight: 700; margin-top: 2em; margin-bottom: 0.5em; }
+                 .markdown-content strong { color: #FFFFFF; font-weight: 800; }
+                 .markdown-content p { margin-bottom: 1.5em; }
                  .custom-scrollbar::-webkit-scrollbar { width: 5px; }
                  .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.04); borderRadius: 10px; }
                  .advisor-sidebar div, .advisor-sidebar button { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -1073,8 +1089,8 @@ Directive: Use the data above to answer specifically. If the user asks for ad co
                 </div>
 
                 {/* --- 📄 MAIN CONTENT AREA --- */}
-                <div style={{ flex: 1, minWidth: 0, background: '#111111' }}>
-                    {activeTab !== 'chat' && (
+                <div style={{ flex: 1, minWidth: 0, background: '#0A0A0F' }}>
+                    {activeTab !== 'chat' && activeTab !== 'blog' && (
                         <>
                             {activeTab === 'profile' && (
                             <div style={{
@@ -1636,108 +1652,170 @@ Directive: Use the data above to answer specifically. If the user asks for ad co
                                     </div>
                                 )}
 
-                                {/* ── BLOG WRITER TAB ── */}
-                                {activeTab === 'blog' && (
-                                    <div style={{ maxWidth: 860, margin: '0 auto', paddingBottom: 60 }}>
-                                        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 24, padding: '32px', marginBottom: 24 }}>
-                                            <h2 style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 24, fontWeight: 700, color: '#F1F5F9', marginBottom: 8 }}>AI Content Strategist (E.E.A.T)</h2>
-                                            <p style={{ color: '#64748B', fontSize: 14, marginBottom: 32 }}>Generate search-dominant blogs using your persona's psychological triggers and pain points.</p>
-                                            
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }} className="blog-cfg">
-                                                <div>
-                                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase' }}>Focus Keywords</label>
-                                                    <input 
-                                                        type="text" 
-                                                        placeholder="e.g. business scaling, customer journey mapping"
-                                                        value={blogSettings.keywords}
-                                                        onChange={e => setBlogSettings({...blogSettings, keywords: e.target.value})}
-                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px 16px', color: '#fff', outline: 'none' }}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase' }}>Target Word Count</label>
-                                                    <select 
-                                                        value={blogSettings.wordCount}
-                                                        onChange={e => setBlogSettings({...blogSettings, wordCount: e.target.value})}
-                                                        style={{ width: '100%', background: 'rgba(255,107,53,0.05)', border: '1px solid rgba(255,107,53,0.1)', borderRadius: 12, padding: '12px 16px', color: '#FF6B35', outline: 'none', cursor: 'pointer' }}
-                                                    >
-                                                        <option value="500">500 Words (Short Form)</option>
-                                                        <option value="800">800 Words (Standard)</option>
-                                                        <option value="1200">1,200 Words (Deep Dive)</option>
-                                                        <option value="2000">2,000+ Words (Pillar Page)</option>
-                                                    </select>
-                                                </div>
-                                            </div>
+                            </div>
+                        </>
+                    )}
 
-                                            <div style={{ marginBottom: 32 }}>
-                                                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase' }}>Writing Tone</label>
-                                                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                                                    {['Professional & Authoritative', 'Casual & Friendly', 'Creative Storytelling', 'Technical & Precise'].map(t => (
-                                                        <button 
-                                                            key={t}
-                                                            onClick={() => setBlogSettings({...blogSettings, tone: t})}
-                                                            style={{ 
-                                                                background: blogSettings.tone === t ? '#FF6B35' : 'rgba(255,255,255,0.05)',
-                                                                border: '1px solid rgba(255,255,255,0.1)',
-                                                                color: blogSettings.tone === t ? '#fff' : '#94A3B8',
-                                                                padding: '8px 16px', borderRadius: 100, fontSize: 13, cursor: 'pointer', transition: '0.2s'
-                                                            }}
-                                                        >{t}</button>
-                                                    ))}
-                                                </div>
-                                            </div>
+                    {/* ── AI SEO WRITER TAB ── */}
+                    {activeTab === 'blog' && (
+                        <div style={{ maxWidth: '100%', margin: '0', padding: '0', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 60px)' }}>
+                            {/* Header Area */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 40px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: '#0A0A0F' }}>
+                                <div>
+                                    <h2 style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 18, fontWeight: 800, color: '#F8FAFC', margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+                                        <span style={{ fontSize: 20 }}>🖋️</span> AI SEO WRITER
+                                    </h2>
+                                    <p style={{ fontSize: 10, color: '#64748B', margin: 0, fontWeight: 600, letterSpacing: '0.05em' }}>RANK MATH & GEO READY</p>
+                                </div>
+                                <div style={{ display: 'flex', gap: 12 }}>
+                                    <button style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)', color: '#10B981', padding: '8px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <span style={{ fontSize: 16 }}>📊</span> Sync GSC
+                                    </button>
+                                    <button 
+                                        onClick={handleGenerateBlog}
+                                        disabled={isGeneratingBlog}
+                                        style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', border: 'none', color: '#fff', padding: '8px 20px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 12px rgba(59,130,246,0.3)' }}
+                                    >
+                                        {isGeneratingBlog ? '✨ Writing...' : '🪄 Generate Content'}
+                                    </button>
+                                </div>
+                            </div>
 
-                                            <button 
-                                                onClick={handleGenerateBlog}
-                                                disabled={isGeneratingBlog}
-                                                style={{ width: '100%', background: 'linear-gradient(135deg, #FF6B35, #FF8C5A)', border: 'none', color: '#fff', padding: '16px', borderRadius: 14, cursor: 'pointer', fontWeight: 700, fontSize: 16, boxShadow: '0 10px 20px rgba(255,107,53,0.2)' }}
+                            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+                                {/* Config Sidebar */}
+                                <div style={{ width: 320, background: '#0A0A0F', borderRight: '1px solid rgba(255,255,255,0.05)', padding: '24px', overflowY: 'auto' }} className="custom-scrollbar">
+                                    <div style={{ marginBottom: 24 }}>
+                                        <label style={{ display: 'block', fontSize: 10, fontWeight: 800, color: '#3B82F6', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Project Environment</label>
+                                        <div style={{ fontSize: 15, fontWeight: 600, color: '#F1F5F9' }}>{form?.businessName || 'Business-1'}</div>
+                                    </div>
+
+                                    <div style={{ marginBottom: 24 }}>
+                                        <label style={{ display: 'block', fontSize: 10, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}># Target Keywords</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="e.g. business intelligence, growth"
+                                            value={blogSettings.keywords}
+                                            onChange={e => setBlogSettings({...blogSettings, keywords: e.target.value})}
+                                            style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px', color: '#fff', fontSize: 13, outline: 'none' }}
+                                        />
+                                    </div>
+
+                                    <div style={{ marginBottom: 24 }}>
+                                        <label style={{ display: 'block', fontSize: 10, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>📓 Core Brief</label>
+                                        <textarea 
+                                            placeholder="Intent, audience, and key sections..."
+                                            value={blogSettings.coreBrief}
+                                            onChange={e => setBlogSettings({...blogSettings, coreBrief: e.target.value})}
+                                            style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px', color: '#fff', fontSize: 13, minHeight: 120, outline: 'none', resize: 'none' }}
+                                        />
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 12, marginBottom: 24 }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: 10, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase' }}>Tone</label>
+                                            <select 
+                                                value={blogSettings.tone}
+                                                onChange={e => setBlogSettings({...blogSettings, tone: e.target.value})}
+                                                style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px', color: '#fff', fontSize: 13, outline: 'none' }}
                                             >
-                                                {isGeneratingBlog ? '✨ Strategizing Content...' : '⚡ Generate SEO-Dominant Blog'}
-                                            </button>
+                                                <option value="Professional & Authoritative">Professional</option>
+                                                <option value="Casual & Friendly">Casual</option>
+                                                <option value="Creative Storytelling">Creative</option>
+                                                <option value="Technical & Precise">Technical</option>
+                                            </select>
                                         </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: 10, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase' }}>Word Count</label>
+                                            <input 
+                                                type="number"
+                                                value={blogSettings.wordCount}
+                                                onChange={e => setBlogSettings({...blogSettings, wordCount: e.target.value})}
+                                                style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px', color: '#fff', fontSize: 13, outline: 'none' }}
+                                            />
+                                        </div>
+                                    </div>
 
-                                        {generatedBlog && (
-                                            <div style={{ animation: 'fade-in 0.8s ease' }}>
-                                                {/* SEO Score Card */}
-                                                <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, padding: '24px', marginBottom: 24, display: 'flex', gap: 32, alignItems: 'center' }}>
-                                                    <div style={{ position: 'relative', width: 80, height: 80, flexShrink: 0 }}>
-                                                        <svg width="80" height="80" viewBox="0 0 100 100">
-                                                            <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8"/>
-                                                            <circle cx="50" cy="50" r="45" fill="none" stroke="#10B981" strokeWidth="8" strokeDasharray={`${seoScore?.score * 2.82} 282`} strokeLinecap="round" style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%', transition: 'stroke-dasharray 1s ease' }}/>
+                                    <div style={{ marginBottom: 24 }}>
+                                        <label style={{ display: 'block', fontSize: 10, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>👨‍💼 E-E-A-T Focus</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="e.g. 10+ years in AI strategy"
+                                            value={blogSettings.eeatFocus}
+                                            onChange={e => setBlogSettings({...blogSettings, eeatFocus: e.target.value})}
+                                            style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px', color: '#fff', fontSize: 13, outline: 'none' }}
+                                        />
+                                    </div>
+
+                                    <div style={{ 
+                                        background: 'rgba(59,130,246,0.03)', border: '1px solid rgba(59,130,246,0.1)', 
+                                        borderRadius: 16, padding: '16px', cursor: 'pointer', transition: '0.2s'
+                                    }} onClick={() => setBlogSettings({...blogSettings, geoOptimized: !blogSettings.geoOptimized})}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                                            <span style={{ fontSize: 16 }}>⚡</span>
+                                            <span style={{ fontSize: 11, fontWeight: 800, color: '#3B82F6', textTransform: 'uppercase' }}>GEO OPTIMIZED</span>
+                                        </div>
+                                        <p style={{ fontSize: 11, color: '#64748B', margin: 0 }}>Optimized for Perplexity & SearchGPT parsing logic.</p>
+                                    </div>
+                                </div>
+
+                                {/* Workspace Area */}
+                                <div style={{ flex: 1, background: '#050508', overflowY: 'auto', padding: '40px' }} className="custom-scrollbar">
+                                    {!generatedBlog && !isGeneratingBlog && (
+                                        <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.8 }}>
+                                            <div style={{ background: 'rgba(59,130,246,0.05)', width: 80, height: 80, borderRadius: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, border: '1px solid rgba(59,130,246,0.1)' }}>
+                                                <span style={{ fontSize: 40, animation: 'float 3s ease-in-out infinite' }}>✨</span>
+                                            </div>
+                                            <h3 style={{ fontSize: 28, fontWeight: 700, color: '#fff', marginBottom: 12 }}>Content Workspace</h3>
+                                            <p style={{ color: '#64748B', fontSize: 15, textAlign: 'center', maxWidth: 400 }}>STRATEGIC AI WRITING FOR AUTHORITY-LED GROWTH.</p>
+                                        </div>
+                                    )}
+
+                                    {isGeneratingBlog && (
+                                        <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                            <div style={{ width: 40, height: 40, border: '3px solid rgba(59,130,246,0.2)', borderTopColor: '#3B82F6', borderRadius: '50%', animation: 'spin-anim 0.8s linear infinite', marginBottom: 20 }} />
+                                            <p style={{ color: '#94A3B8', fontSize: 14, fontWeight: 500 }}>AI is architecting your authority-led content...</p>
+                                        </div>
+                                    )}
+
+                                    {generatedBlog && !isGeneratingBlog && (
+                                        <div style={{ animation: 'fade-in 0.8s ease', maxWidth: 840, margin: '0 auto' }}>
+                                            {/* SEO Score Brief */}
+                                            <div style={{ display: 'flex', gap: 20, marginBottom: 40 }}>
+                                                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 20, padding: '24px', flex: 1, display: 'flex', alignItems: 'center', gap: 24 }}>
+                                                    <div style={{ position: 'relative', width: 60, height: 60 }}>
+                                                        <svg width="60" height="60" viewBox="0 0 100 100">
+                                                            <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,107,53,0.1)" strokeWidth="10"/>
+                                                            <circle cx="50" cy="50" r="45" fill="none" stroke="#FF6B35" strokeWidth="10" strokeDasharray={`${seoScore?.score * 2.82} 282`} strokeLinecap="round" style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}/>
                                                         </svg>
-                                                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 800, color: '#10B981' }}>{seoScore?.score || '0'}</div>
+                                                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 900, color: '#FF6B35' }}>{seoScore?.score}</div>
                                                     </div>
                                                     <div>
-                                                        <h3 style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', letterSpacing: '0.1em', marginBottom: 8 }}>RANK MATH SEO SCORE</h3>
-                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                                                            {seoScore?.checklists?.map((c, i) => <span key={i} style={{ fontSize: 11, background: 'rgba(16,185,129,0.1)', color: '#10B981', padding: '4px 10px', borderRadius: 100 }}>✓ {c}</span>)}
+                                                        <h4 style={{ fontSize: 10, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Rank Math Score</h4>
+                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                                            {seoScore?.checklists?.slice(0, 3).map((c, i) => <span key={i} style={{ fontSize: 10, background: 'rgba(16,185,129,0.1)', color: '#10B981', padding: '2px 8px', borderRadius: 4 }}>{c}</span>)}
                                                         </div>
                                                     </div>
                                                 </div>
-
-                                                <SectionCard icon="📖" title={generatedBlog.title} color="#FF6B35">
-                                                    <div className="blog-output" style={{ color: '#D1D1D1', fontSize: 15, lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
-                                                        <ReactMarkdown>{generatedBlog.content}</ReactMarkdown>
+                                                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 20, padding: '24px', flex: 1.5, overflow: 'hidden' }}>
+                                                    <h4 style={{ fontSize: 10, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Optimization Suggestions</h4>
+                                                    <div style={{ fontSize: 12, color: '#64748B', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                                                        {seoScore?.suggestions?.[0] || 'Generating next-level improvements...'}
                                                     </div>
-                                                </SectionCard>
-                                                
-                                                {seoScore?.suggestions?.length > 0 && (
-                                                    <SectionCard icon="🚀" title="Expert Recommendations" color="#8B5CF6">
-                                                        <ul style={{ color: '#94A3B8', fontSize: 14, margin: 0, paddingLeft: 20 }}>
-                                                            {seoScore.suggestions.map((s, i) => <li key={i} style={{ marginBottom: 8 }}>{s}</li>)}
-                                                        </ul>
-                                                    </SectionCard>
-                                                )}
+                                                </div>
                                             </div>
-                                        )}
-                                        
-                                        <style>{`
-                                            @media (max-width: 600px) { .blog-cfg { grid-template-columns: 1fr !important; } }
-                                        `}</style>
-                                    </div>
-                                )}
+
+                                            {/* Article Content */}
+                                            <div className="aesthetic-view" style={{ color: '#F1F5F9' }}>
+                                                <h1 style={{ fontSize: 40, fontWeight: 800, lineHeight: 1.2, marginBottom: 40, letterSpacing: '-0.04em' }}>{generatedBlog.title}</h1>
+                                                <div className="markdown-content" style={{ fontSize: 17, lineHeight: 1.9, color: '#94A3B8' }}>
+                                                    <ReactMarkdown>{generatedBlog.content}</ReactMarkdown>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </>
+                        </div>
                     )}
 
                     {/* --- 💎 PREMIMUM SLEEK AI ADVISOR (GEN-CLONE) --- */}
