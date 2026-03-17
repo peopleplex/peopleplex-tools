@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
@@ -7,10 +8,44 @@ import ReactMarkdown from 'react-markdown';
 
 // ── Helpers ─────────────────────────────────────────
 function parseAI(text) {
-    const first = text.indexOf('{');
-    const last = text.lastIndexOf('}');
-    if (first === -1 || last === -1) return null;
-    try { return JSON.parse(text.substring(first, last + 1)); } catch { return null; }
+    if (!text) return null;
+    
+    // Tagged Format Extraction for Long Text
+    if (text.includes('[TITLE]') || text.includes('[CONTENT]')) {
+        const extract = (tag) => {
+            const start = text.indexOf(`[${tag}]`);
+            if (start === -1) return '';
+            let nextTagIndex = text.indexOf('[', start + tag.length + 2);
+            if (nextTagIndex === -1) nextTagIndex = text.length;
+            return text.substring(start + tag.length + 2, nextTagIndex).trim();
+        };
+
+        const scoreText = extract('SCORE');
+        return {
+            title: extract('TITLE'),
+            content: extract('CONTENT'),
+            seoScore: {
+                score: parseInt(scoreText) || 70,
+                checklists: extract('CHECKLIST').split('\n').filter(l => l.trim()).map(l => l.replace(/^[-*•\s]*/, '')),
+                suggestions: extract('SUGGESTIONS').split('\n').filter(l => l.trim()).map(l => l.replace(/^[-*•\s]*/, ''))
+            }
+        };
+    }
+
+    try {
+        return JSON.parse(text);
+    } catch {
+        const first = text.indexOf('{');
+        const last = text.lastIndexOf('}');
+        if (first === -1 || last === -1) return null;
+        const candidate = text.substring(first, last + 1);
+        try {
+            return JSON.parse(candidate);
+        } catch {
+            const cleaned = text.replace(/```json\s?|\s?```/g, '').trim();
+            try { return JSON.parse(cleaned); } catch { return null; }
+        }
+    }
 }
 
 // Convert snake_case / underscore text → Title Case Words
@@ -93,11 +128,16 @@ function RadarChart({ data, color = '#FF6B35' }) {
     );
 }
 
-function DonutChart({ value, label, color = '#FF6B35' }) {
+function DonutChart({ value, label, info, color = '#FF6B35' }) {
     const r = 36, circ = 2 * Math.PI * r;
     const dash = (value / 100) * circ;
     return (
         <div style={{ position: 'relative', width: 90, height: 90 }}>
+            {info && (
+                <div style={{ position: 'absolute', top: -4, right: -4, zIndex: 10 }}>
+                    <InfoTooltip text={info} />
+                </div>
+            )}
             <svg width="90" height="90" style={{ transform: 'rotate(-90deg)' }}>
                 <circle cx="45" cy="45" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
                 <circle cx="45" cy="45" r={r} fill="none" stroke={color} strokeWidth="8"
@@ -118,13 +158,25 @@ function InfoTooltip({ text }) {
     const btnRef = useRef(null);
 
     function showTooltip() {
-        if (btnRef.current) {
-            const r = btnRef.current.getBoundingClientRect();
-            setPos({
-                top: r.top + window.scrollY - 8,   // above the button
-                left: r.left + window.scrollX + r.width / 2  // horizontally centred
-            });
+        if (!btnRef.current) return;
+        const rect = btnRef.current.getBoundingClientRect();
+        const center = rect.left + rect.width / 2;
+        const pad = 12;
+        const w = 240;
+        
+        let targetX = center;
+        if (center + w/2 > window.innerWidth - pad) {
+            targetX = window.innerWidth - w/2 - pad;
         }
+        if (center - w/2 < pad) {
+            targetX = w/2 + pad;
+        }
+
+        setPos({
+            top: rect.top - 12,
+            left: targetX,
+            centerX: center
+        });
     }
 
     function hideTooltip() { setPos(null); }
@@ -149,7 +201,7 @@ function InfoTooltip({ text }) {
             >
                 i
             </button>
-            {pos && (
+            {pos && createPortal(
                 <div style={{
                     position: 'fixed',
                     top: pos.top,
@@ -159,20 +211,24 @@ function InfoTooltip({ text }) {
                     borderRadius: 10, padding: '10px 14px',
                     width: 240, fontSize: 13, color: '#CBD5E1', lineHeight: 1.55,
                     boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
-                    zIndex: 99999, pointerEvents: 'none',
-                    whiteSpace: 'normal'
+                    zIndex: 999999, pointerEvents: 'none',
+                    whiteSpace: 'normal',
+                    animation: 'tooltip-reveal 0.1s cubic-bezier(0.16, 1, 0.3, 1)',
+                    boxSizing: 'border-box'
                 }}>
                     {text}
-                    {/* Arrow */}
+                    {/* Arrow (relative to trigger center) */}
                     <div style={{
-                        position: 'absolute', top: '100%', left: '50%',
+                        position: 'absolute', top: '100%',
+                        left: `calc(50% + ${pos.centerX - pos.left}px)`,
                         transform: 'translateX(-50%)',
                         width: 0, height: 0,
                         borderLeft: '6px solid transparent',
                         borderRight: '6px solid transparent',
                         borderTop: '6px solid #1E2030'
                     }} />
-                </div>
+                </div>,
+                document.body
             )}
         </>
     );
@@ -258,8 +314,10 @@ function JourneyStage({ stage, index }) {
 }
 
 function PersonaCard({ persona, index }) {
-    const colors = ['#3B82F6', '#8B5CF6'];
-    const c = colors[index % 2];
+    const colors = ['#3B82F6', '#8B5CF6', '#F59E0B', '#10B981'];
+    const icons = ['👩', '👨', '🧑', '👤'];
+    const c = colors[index % 4];
+    const icon = icons[index % 4];
     return (
         <div style={{
             background: 'rgba(255,255,255,0.03)', border: `1px solid ${c}25`,
@@ -269,7 +327,7 @@ function PersonaCard({ persona, index }) {
                 <div style={{
                     width: 52, height: 52, borderRadius: 14, background: `${c}20`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26
-                }}>{index === 0 ? '👩' : '👨'}</div>
+                }}>{icon}</div>
                 <div>
                     <div style={{ fontSize: 17, fontWeight: 700, color: '#F1F5F9' }}>{persona.name}</div>
                     <div style={{ fontSize: 13, color: c }}>{persona.archetype}</div>
@@ -306,7 +364,7 @@ function PersonaCard({ persona, index }) {
 }
 
 // ── Loading Screen ───────────────────────────────────
-function LoadingScreen({ steps, currentStep }) {
+function LoadingScreen({ steps, currentStep, businessName }) {
     return (
         <div style={{
             minHeight: '100vh', background: '#0A0A0F',
@@ -323,7 +381,7 @@ function LoadingScreen({ steps, currentStep }) {
                 <h2 style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 28, fontWeight: 700, color: '#FFFFFF', marginBottom: 12, letterSpacing: '-0.02em' }}>
                     Generating Intelligence Report
                 </h2>
-                <p style={{ fontSize: 16, color: '#666666' }}>Curating specialized market data for {formData?.businessName || 'your business'}...</p>
+                <p style={{ fontSize: 16, color: '#666666' }}>Curating specialized market data for {businessName || 'your business'}...</p>
             </div>
 
             <div style={{ width: '100%', maxWidth: 500, marginBottom: 40 }}>
@@ -380,8 +438,9 @@ export default function ReportDashboard({ user }) {
     const [genStep, setGenStep] = useState(0);
     const [report, setReport] = useState(null);
     const [form, setForm] = useState(null);
-    const [activeTab, setActiveTab] = useState('journey');
+    const [activeTab, setActiveTab] = useState('profile');
     const [error, setError] = useState('');
+    const [isReadOnly, setIsReadOnly] = useState(false);
 
 
     // AI Chat State
@@ -391,6 +450,12 @@ export default function ReportDashboard({ user }) {
     const [chatInput, setChatInput] = useState('');
     const [isChatting, setIsChatting] = useState(false);
     const [pastSessions, setPastSessions] = useState([]);
+
+    // Blog Writer State
+    const [blogSettings, setBlogSettings] = useState({ keywords: '', wordCount: '800', tone: 'Professional & Authoritative' });
+    const [isGeneratingBlog, setIsGeneratingBlog] = useState(false);
+    const [generatedBlog, setGeneratedBlog] = useState(null);
+    const [seoScore, setSeoScore] = useState(null);
 
 
     // Load or generate report
@@ -403,6 +468,12 @@ export default function ReportDashboard({ user }) {
 
                 const data = snap.data();
                 setForm(data.form);
+                
+                // Security/Privacy: Check if this user is the owner
+                const ownerId = data.userId;
+                const currentUserId = user?.uid;
+                const readOnly = ownerId && currentUserId !== ownerId;
+                setIsReadOnly(readOnly);
 
                 // Load existing chat history if it exists
                 if (data.chatHistory && Array.isArray(data.chatHistory) && data.chatHistory.length > 0) {
@@ -445,6 +516,10 @@ Biggest Challenge: ${formData.biggestChallenge || 'Not specified'}
 Primary Goal: ${formData.goal || 'Not specified'}
 Additional Notes: ${formData.additionalNotes || 'None'}
 Website: ${formData.website || 'Not provided'}
+Instagram: ${formData.instagram || 'Not provided'}
+Facebook: ${formData.facebook || 'Not provided'}
+LinkedIn: ${formData.linkedin || 'Not provided'}
+Google My Business: ${formData.gmb || 'Not provided'}
 `;
 
         try {
@@ -510,7 +585,7 @@ Return JSON:
 
             // === MODULE 4: PERSONAS ===
             setGenStep(4);
-            const personasRaw = await callAI(`You are a customer persona specialist. Create 2 detailed personas for this business and return ONLY raw JSON (no markdown):
+            const personasRaw = await callAI(`You are a customer persona specialist. Create 4 detailed personas for this business and return ONLY raw JSON (no markdown):
 ${businessContext}
 Return JSON:
 {
@@ -743,6 +818,116 @@ Directive: Use the data above to answer specifically. If the user asks for ad co
         }
     };
 
+    const [showShareToast, setShowShareToast] = useState(false);
+
+    const handleShare = () => {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url);
+        setShowShareToast(true);
+        setTimeout(() => setShowShareToast(false), 3000);
+    };
+
+    const handleGenerateBlog = async () => {
+        if (!blogSettings.keywords) { alert('Please enter keywords.'); return; }
+        setIsGeneratingBlog(true);
+        setGeneratedBlog(null);
+        setSeoScore(null);
+
+        try {
+            const res = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    max_tokens: 4000,
+                    messages: [{
+                        role: 'user',
+                        content: `You are an expert Content Strategist & SEO Specialist. Write a high-quality blog post.
+                        
+                        BUSINESS CONTEXT:
+                        - Name: ${form?.businessName}
+                        - Industry: ${form?.industry}
+                        - Personas: ${report?.personas?.map(p => p.name).join(', ')}
+                        - Persona Pain Points: ${report?.personas?.map(p => p.painPoints?.join(', ')).join('; ')}
+                        - Psychological Triggers: ${report?.psychology?.cognitiveBiases?.map(b => b.bias).join(', ')}
+                        
+                        REQUIREMENTS:
+                        - Keywords: ${blogSettings.keywords}
+                        - Target Length: ${blogSettings.wordCount} words
+                        - Tone: ${blogSettings.tone}
+                        - Format: User-First Creative Storytelling
+                        - Standards: E-E-A-T and GEO Optimization.
+                        
+                        IMPORTANT: Use these exact tags to structure your response.
+                        
+                        [TITLE]
+                        (Your intriguing, SEO-optimized headline)
+
+                        [CONTENT]
+                        (Full markdown content of the blog, including H2/H3 tags and storytelling elements)
+
+                        [SCORE]
+                        (A number from 0-100 indicating Rank Math SEO strength)
+
+                        [CHECKLIST]
+                        (Bullet points of SEO items passed)
+
+                        [SUGGESTIONS]
+                        (Bullet points of improvement tips)
+                        `
+                    }]
+                })
+            });
+
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.message || `API Error ${res.status}`);
+            }
+
+            const rawRes = await res.json();
+            const text = rawRes.content?.[0]?.text || rawRes.text || '';
+            
+            if (!text) throw new Error("No response content from AI.");
+
+            // Use the robust parseAI helper
+            let json = parseAI(text);
+            
+            // Defensive extraction: In case AI nests it
+            if (json && !json.content && json.blog) json = json.blog;
+
+            if (!json || (!json.content && !json.title)) {
+                console.error('Incomplete JSON:', text);
+                throw new Error("AI output was cut off or malformed. Please try again with a shorter word count if it continues.");
+            }
+            
+            // Final fallback for missing fields
+            const finalized = {
+                title: json.title || 'Strategized Blog Content',
+                content: json.content || (typeof json === 'string' ? json : 'Content generation error.'),
+                seoScore: json.seoScore || { score: 70, checklists: ['Basic SEO applied'], suggestions: ['Check keyword density manually'] }
+            };
+
+            setGeneratedBlog(finalized);
+            setSeoScore(finalized.seoScore);
+
+            await updateDoc(doc(db, 'reports', reportId), {
+                blogContent: finalized
+            }).catch(e => console.error('Firebase save error:', e));
+
+        } catch (e) {
+            console.error('Blog generation error:', e);
+            alert(`Blog Generation Failed: ${e.message}`);
+        } finally {
+            setIsGeneratingBlog(false);
+        }
+    };
+
+    const handleRegenerate = async () => {
+        if (!window.confirm("Are you sure you want to regenerate this report? Current data will be replaced with fresh AI insights.")) return;
+        setStatus('generating');
+        // generateFullReport will set genStep and call updateDoc at the end
+        await generateFullReport(form, reportId);
+    };
+
     if (status === 'loading') {
         return (
             <div style={{ minHeight: '100vh', background: '#0A0A0F', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -753,7 +938,7 @@ Directive: Use the data above to answer specifically. If the user asks for ad co
     }
 
     if (status === 'generating') {
-        return <LoadingScreen steps={GENERATION_STEPS} currentStep={genStep} />;
+        return <LoadingScreen steps={GENERATION_STEPS} currentStep={genStep} businessName={form?.businessName} />;
     }
 
     if (status === 'error') {
@@ -770,17 +955,36 @@ Directive: Use the data above to answer specifically. If the user asks for ad co
     }
 
     const TABS = [
+        { id: 'profile', label: 'BUSINESS PROFILE', icon: '🏢', color: '#94A3B8' },
         { id: 'journey', label: 'MAP JOURNEY', icon: '🗺️', color: '#3B82F6' },
         { id: 'psychology', label: 'PSYCHOLOGY', icon: '🧠', color: '#8B5CF6' },
         { id: 'industry', label: 'INDUSTRY', icon: '📊', color: '#10B981' },
         { id: 'personas', label: 'PERSONAS', icon: '👥', color: '#F59E0B' },
         { id: 'buying', label: 'BUYING', icon: '💡', color: '#EF4444' },
         { id: 'plan', label: 'ACTION PLAN', icon: '⚡', color: '#C5A059' },
+        { id: 'blog', label: 'BLOG WRITER', icon: '✍️', color: '#FF6B35' },
         { id: 'chat', label: 'AI ADVISOR', icon: '✨', color: '#E2D1B0' },
-    ];
+    ].filter(t => !isReadOnly || (t.id !== 'chat' && t.id !== 'blog' && t.id !== 'profile'));
 
     return (
         <div style={{ minHeight: '100vh', background: '#0A0A0F' }}>
+            <style>{`
+                 @keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+                 @keyframes message-slide-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+                 @keyframes glow-pulse { 0% { box-shadow: 0 0 0px rgba(255,107,53,0); } 50% { box-shadow: 0 0 15px rgba(255,107,53,0.1); } 100% { box-shadow: 0 0 0px rgba(255,107,53,0); } }
+                 @keyframes dot-pulse { 0% { opacity: 0.2; } 50% { opacity: 1; } 100% { opacity: 0.2; } }
+                 @keyframes tooltip-reveal { from { opacity: 0; transform: translate(-50%, -95%); } to { opacity: 1; transform: translate(-50%, -100%); } }
+                 .aesthetic-view h2 { font-size: 1.25em; margin-top: 28px; color: #FFFFFF; margin-bottom: 10px; font-weight: 600; }
+                 .aesthetic-view p { margin-bottom: 16px; color: #BBBBBB; font-family: 'Inter Tight', sans-serif; }
+                 .aesthetic-view { font-family: 'Inter Tight', sans-serif; font-size: 0.95em; line-height: 1.7; }
+                 .aesthetic-view strong { color: #FFFFFF; font-weight: 700; font-style: normal; }
+                 .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+                 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.04); borderRadius: 10px; }
+                 .advisor-sidebar div, .advisor-sidebar button { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+                 @media (max-width: 900px) { .advisor-sidebar { display: none !important; } }
+                 @media (max-width: 768px) { .personas-grid { grid-template-columns: 1fr !important; } }
+            `}</style>
+
             {/* Top Bar */}
             <div style={{
                 position: 'sticky', top: 0, zIndex: 50,
@@ -799,9 +1003,37 @@ Directive: Use the data above to answer specifically. If the user asks for ad co
                             {form?.businessName || 'Business'} analysis
                         </div>
                     </div>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#10B981', background: 'rgba(16,185,129,0.1)', padding: '3px 10px', borderRadius: 100 }}>✓ Complete</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#10B981', background: 'rgba(16,185,129,0.1)', padding: '3px 10px', borderRadius: 100 }}>{isReadOnly ? '👀 Shared View' : '✓ Complete'}</span>
+                    {!isReadOnly && (
+                        <button 
+                            onClick={handleRegenerate}
+                            style={{
+                                background: 'rgba(197, 160, 89, 0.1)', border: '1px solid rgba(197, 160, 89, 0.2)',
+                                color: '#C5A059', padding: '3px 10px', borderRadius: 100, fontSize: 11,
+                                fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseOver={e => e.currentTarget.style.background = 'rgba(197, 160, 89, 0.2)'}
+                            onMouseOut={e => e.currentTarget.style.background = 'rgba(197, 160, 89, 0.1)'}
+                        >
+                            ⟳ Regenerate
+                        </button>
+                    )}
                 </div>
-                <div style={{ display: 'flex', gap: 10 }}>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    {showShareToast && (
+                        <div style={{
+                            fontSize: 12, color: '#10B981', background: 'rgba(16,185,129,0.1)',
+                            padding: '4px 12px', borderRadius: 8, animation: 'fade-in 0.3s'
+                        }}>Link copied!</div>
+                    )}
+                    <button onClick={handleShare} style={{
+                        background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                        color: '#F1F5F9', padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
+                        fontSize: 13, fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: 6
+                    }}>
+                        <span>🔗</span> Share
+                    </button>
                     <button onClick={() => navigate('/my-reports')} style={{
                         background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
                         color: '#94A3B8', padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
@@ -844,32 +1076,232 @@ Directive: Use the data above to answer specifically. If the user asks for ad co
                 <div style={{ flex: 1, minWidth: 0, background: '#111111' }}>
                     {activeTab !== 'chat' && (
                         <>
+                            {activeTab === 'profile' && (
                             <div style={{
                                 background: '#1A1A1A',
                                 borderBottom: '1px solid rgba(255,255,255,0.03)',
-                                padding: '40px 60px'
+                                padding: '60px 80px',
+                                position: 'relative',
+                                overflow: 'hidden'
                             }}>
-                                <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: 40, alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <div>
-                                        <h1 style={{ fontFamily: "Inter, sans-serif", fontSize: 28, fontWeight: 600, color: '#FFFFFF', marginBottom: 8, letterSpacing: '-0.02em' }}>
+                                {/* Background Detail Layer */}
+                                <div style={{
+                                    position: 'absolute', top: 0, right: 0, width: '40%', height: '100%',
+                                    background: 'linear-gradient(to left, rgba(59,130,246,0.03), transparent)',
+                                    pointerEvents: 'none'
+                                }} />
+                                
+                                <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: 60, alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
+                                    <div style={{ flex: 1, minWidth: 320 }}>
+                                        {/* Meta Tags Section */}
+                                        <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+                                            <span style={{ 
+                                                fontSize: 10, fontWeight: 800, color: '#3B82F6', 
+                                                background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)',
+                                                padding: '5px 12px', borderRadius: 99, letterSpacing: '0.08em' 
+                                            }}>
+                                                {form?.industry?.toUpperCase()}
+                                            </span>
+                                            <span style={{ 
+                                                fontSize: 10, fontWeight: 800, color: '#10B981', 
+                                                background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)',
+                                                padding: '5px 12px', borderRadius: 99, letterSpacing: '0.08em' 
+                                            }}>
+                                                {form?.businessType?.toUpperCase()}
+                                            </span>
+                                        </div>
+                                        
+                                        <h1 style={{ 
+                                            fontFamily: "'Inter Tight', sans-serif", fontSize: 44, 
+                                            fontWeight: 700, color: '#FFFFFF', marginBottom: 16, 
+                                            letterSpacing: '-0.04em', lineHeight: 1 
+                                        }}>
                                             Overview Analysis
                                         </h1>
-                                        <p style={{ fontSize: 18, color: '#9B9B9B', fontWeight: 500 }}>
-                                            {form?.industry} · {form?.businessType?.toUpperCase()} · {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                                        </p>
+                                        
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 36 }}>
+                                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981', boxShadow: '0 0 10px rgba(16,185,129,0.5)' }} />
+                                            <p style={{ fontSize: 15, color: '#64748B', fontWeight: 500, margin: 0 }}>
+                                                Last updated on {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                            </p>
+                                        </div>
+
+                                        {/* Digital Footprint Quick Links */}
+                                        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                                            {form?.website && (
+                                                <a href={form.website.startsWith('http') ? form.website : `https://${form.website}`} 
+                                                   target="_blank" rel="noreferrer" 
+                                                   style={{ 
+                                                       fontSize: 13, color: '#F1F5F9', textDecoration: 'none', 
+                                                       background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', 
+                                                       padding: '10px 18px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10, 
+                                                       transition: 'all 0.2s', fontWeight: 500 
+                                                   }}
+                                                   onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; }}
+                                                   onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                                >
+                                                    <span style={{ fontSize: 16 }}>🌐</span> Website
+                                                </a>
+                                            )}
+                                            {form?.instagram && <div style={{ fontSize: 13, color: '#F1F5F9', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', padding: '10px 18px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 500 }}><span>📸</span> Instagram</div>}
+                                            {form?.facebook && <div style={{ fontSize: 13, color: '#F1F5F9', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', padding: '10px 18px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 500 }}><span>📘</span> Facebook</div>}
+                                            {form?.linkedin && <div style={{ fontSize: 13, color: '#F1F5F9', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', padding: '10px 18px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 500 }}><span>💼</span> LinkedIn</div>}
+                                            {form?.gmb && <div style={{ fontSize: 13, color: '#F1F5F9', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', padding: '10px 18px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 500 }}><span>📍</span> GMB</div>}
+                                        </div>
                                     </div>
-                                    <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
-                                        <DonutChart value={report?.journey?.overallScore || 72} label="Journey Health" color="#3B82F6" />
-                                        <DonutChart value={report?.industry?.industryScore?.value || 68} label="Market Context" color="#10B981" />
-                                        <DonutChart value={report?.buying?.loyaltyScore || 70} label="Loyalty Index" color="#8B5CF6" />
+
+                                    {/* KPI Stat Cards */}
+                                    <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+                                        {[
+                                            { value: report?.journey?.overallScore || 72, label: 'Journey Health', color: '#3B82F6', info: "Overall efficiency of your Customer Sales Funnel. High scores mean a friction-free path from awareness to purchase." },
+                                            { value: report?.industry?.industryScore?.value || 68, label: 'Market Context', color: '#10B981', info: "Your competitive positioning. Measures how well you stand out against industry trends and competitor saturation." },
+                                            { value: report?.buying?.loyaltyScore || 80, label: 'Loyalty Index', color: '#8B5CF6', info: "Retention & Advocacy strength. High scores indicate customers likely to stay long-term and recommend your business." }
+                                        ].map((kpi, i) => (
+                                            <div key={i} style={{
+                                                background: 'rgba(255,255,255,0.02)',
+                                                border: '1px solid rgba(255,255,255,0.05)',
+                                                borderRadius: 28,
+                                                padding: '24px',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                gap: 16,
+                                                minWidth: 160,
+                                                transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                                cursor: 'default'
+                                            }}
+                                            onMouseEnter={e => {
+                                                e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                                                e.currentTarget.style.transform = 'translateY(-6px)';
+                                                e.currentTarget.style.borderColor = `${kpi.color}40`;
+                                                e.currentTarget.style.boxShadow = `0 20px 40px -20px ${kpi.color}30`;
+                                            }}
+                                            onMouseLeave={e => {
+                                                e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
+                                                e.currentTarget.style.transform = 'translateY(0)';
+                                                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)';
+                                                e.currentTarget.style.boxShadow = 'none';
+                                            }}>
+                                                <DonutChart value={kpi.value} label={kpi.label} info={kpi.info} color={kpi.color} />
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
+                            )}
                             <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 60px' }}>
+                                {/* ── BUSINESS PROFILE TAB ── */}
+                                {activeTab === 'profile' && (
+                                    <div style={{ maxWidth: 860, margin: '0 auto', paddingBottom: 60 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+                                            <div>
+                                                <h2 style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 24, fontWeight: 700, color: '#F1F5F9', marginBottom: 8 }}>Business Profile</h2>
+                                                <p style={{ color: '#64748B', fontSize: 14 }}>Manage your digital footprint and core business identity.</p>
+                                            </div>
+                                            <button 
+                                                onClick={async () => {
+                                                    if (window.confirm("Updating your profile will reset your current tokens and trigger a full AI re-analysis. Continue?")) {
+                                                        setStatus('generating');
+                                                        await updateDoc(doc(db, 'reports', reportId), { form });
+                                                        await generateFullReport(form, reportId);
+                                                    }
+                                                }}
+                                                style={{
+                                                    background: 'linear-gradient(135deg, #FF6B35, #FF8C5A)',
+                                                    border: 'none', color: '#fff', padding: '12px 24px', borderRadius: 12,
+                                                    fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 20px rgba(255,107,53,0.3)'
+                                                }}
+                                            >
+                                                ⚡ Update & Refresh Analysis
+                                            </button>
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+                                            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 20, padding: 24 }}>
+                                                <h3 style={{ fontSize: 14, fontWeight: 700, color: '#94A3B8', marginBottom: 20, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Core Identity</h3>
+                                                <div style={{ marginBottom: 16 }}>
+                                                    <label style={{ display: 'block', fontSize: 12, color: '#64748B', marginBottom: 6 }}>Business Name</label>
+                                                    <input 
+                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: '#F1F5F9' }}
+                                                        value={form?.businessName || ''} onChange={e => setForm({...form, businessName: e.target.value})}
+                                                    />
+                                                </div>
+                                                <div style={{ marginBottom: 16 }}>
+                                                    <label style={{ display: 'block', fontSize: 12, color: '#64748B', marginBottom: 6 }}>Industry</label>
+                                                    <input 
+                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: '#F1F5F9' }}
+                                                        value={form?.industry || ''} onChange={e => setForm({...form, industry: e.target.value})}
+                                                    />
+                                                </div>
+                                                <div style={{ marginBottom: 16 }}>
+                                                    <label style={{ display: 'block', fontSize: 12, color: '#64748B', marginBottom: 6 }}>Business Type</label>
+                                                    <input 
+                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: '#F1F5F9' }}
+                                                        value={form?.businessType || ''} onChange={e => setForm({...form, businessType: e.target.value})}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 20, padding: 24 }}>
+                                                <h3 style={{ fontSize: 14, fontWeight: 700, color: '#94A3B8', marginBottom: 20, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Digital Footprint</h3>
+                                                <div style={{ marginBottom: 16 }}>
+                                                    <label style={{ display: 'block', fontSize: 12, color: '#64748B', marginBottom: 6 }}>Website</label>
+                                                    <input 
+                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: '#F1F5F9' }}
+                                                        value={form?.website || ''} onChange={e => setForm({...form, website: e.target.value})}
+                                                    />
+                                                </div>
+                                                <div style={{ marginBottom: 16 }}>
+                                                    <label style={{ display: 'block', fontSize: 12, color: '#64748B', marginBottom: 6 }}>Instagram</label>
+                                                    <input 
+                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: '#F1F5F9' }}
+                                                        value={form?.instagram || ''} onChange={e => setForm({...form, instagram: e.target.value})}
+                                                    />
+                                                </div>
+                                                <div style={{ marginBottom: 16 }}>
+                                                    <label style={{ display: 'block', fontSize: 12, color: '#64748B', marginBottom: 6 }}>LinkedIn</label>
+                                                    <input 
+                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: '#F1F5F9' }}
+                                                        value={form?.linkedin || ''} onChange={e => setForm({...form, linkedin: e.target.value})}
+                                                    />
+                                                </div>
+                                                <div style={{ marginBottom: 16 }}>
+                                                    <label style={{ display: 'block', fontSize: 12, color: '#64748B', marginBottom: 6 }}>GMB Link</label>
+                                                    <input 
+                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: '#F1F5F9' }}
+                                                        value={form?.gmb || ''} onChange={e => setForm({...form, gmb: e.target.value})}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ marginTop: 24, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 20, padding: 24 }}>
+                                            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#94A3B8', marginBottom: 20, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Competitive Strategy</h3>
+                                            <div style={{ marginBottom: 16 }}>
+                                                <label style={{ display: 'block', fontSize: 12, color: '#64748B', marginBottom: 6 }}>Biggest Business Challenge</label>
+                                                <textarea 
+                                                    style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: '#F1F5F9', minHeight: 80 }}
+                                                    value={form?.biggestChallenge || ''} onChange={e => setForm({...form, biggestChallenge: e.target.value})}
+                                                />
+                                            </div>
+                                            <div style={{ marginBottom: 16 }}>
+                                                <label style={{ display: 'block', fontSize: 12, color: '#64748B', marginBottom: 6 }}>Main Product/Service</label>
+                                                <textarea 
+                                                    style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: '#F1F5F9', minHeight: 80 }}
+                                                    value={form?.mainProduct || ''} onChange={e => setForm({...form, mainProduct: e.target.value})}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* ── JOURNEY TAB ── */}
                                 {activeTab === 'journey' && report?.journey && (
-                                    <div>
+                                    <div style={{ paddingBottom: 60 }}>
+                                        <div style={{ marginBottom: 32 }}>
+                                            <h2 style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 24, fontWeight: 700, color: '#F1F5F9', marginBottom: 8 }}>Customer Journey Map</h2>
+                                            <p style={{ color: '#64748B', fontSize: 14 }}>Visualize every touchpoint and identify revenue leakage across your sales funnel.</p>
+                                        </div>
                                         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
                                             <div style={{ flex: 1, minWidth: 200, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '18px 20px' }}>
                                                 <div style={{ fontSize: 12, color: '#9B9B9B', marginBottom: 4 }}>TOP RISK STAGE</div>
@@ -902,7 +1334,11 @@ Directive: Use the data above to answer specifically. If the user asks for ad co
 
                                 {/* ── PSYCHOLOGY TAB ── */}
                                 {activeTab === 'psychology' && report?.psychology && (
-                                    <div>
+                                    <div style={{ paddingBottom: 60 }}>
+                                        <div style={{ marginBottom: 32 }}>
+                                            <h2 style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 24, fontWeight: 700, color: '#F1F5F9', marginBottom: 8 }}>Consumer Psychology</h2>
+                                            <p style={{ color: '#64748B', fontSize: 14 }}>Decode the emotional drivers, fears, and triggers that influence your audience's behavior.</p>
+                                        </div>
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }} className="psych-grid">
                                             <SectionCard icon="✨" title="Core Desires" color="#8B5CF6"
                                                 info="The deep emotional and practical things your customers really want when they look for a product like yours. Use these to write your headlines, ads, and pitch.">
@@ -973,7 +1409,11 @@ Directive: Use the data above to answer specifically. If the user asks for ad co
 
                                 {/* ── INDUSTRY TAB ── */}
                                 {activeTab === 'industry' && report?.industry && (
-                                    <div>
+                                    <div style={{ paddingBottom: 60 }}>
+                                        <div style={{ marginBottom: 32 }}>
+                                            <h2 style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 24, fontWeight: 700, color: '#F1F5F9', marginBottom: 8 }}>Industry & Market Insights</h2>
+                                            <p style={{ color: '#64748B', fontSize: 14 }}>Analyze market size, emerging trends, and your unique strategic positioning.</p>
+                                        </div>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }} className="industry-stats">
                                             {[
                                                 { label: 'Market Size', value: report.industry.marketSize || 'N/A', icon: '💰', color: '#10B981' },
@@ -1041,8 +1481,12 @@ Directive: Use the data above to answer specifically. If the user asks for ad co
 
                                 {/* ── PERSONAS TAB ── */}
                                 {activeTab === 'personas' && (
-                                    <div>
-                                        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 24 }}>
+                                    <div style={{ paddingBottom: 60 }}>
+                                        <div style={{ marginBottom: 32 }}>
+                                            <h2 style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 24, fontWeight: 700, color: '#F1F5F9', marginBottom: 8 }}>Customer Personas</h2>
+                                            <p style={{ color: '#64748B', fontSize: 14 }}>Detailed profiles of your ideal customers based on demographic and psychographic data.</p>
+                                        </div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20, marginBottom: 24 }} className="personas-grid">
                                             {report?.personas?.map((p, i) => <PersonaCard key={i} persona={p} index={i} />)}
                                         </div>
                                     </div>
@@ -1050,7 +1494,11 @@ Directive: Use the data above to answer specifically. If the user asks for ad co
 
                                 {/* ── BUYING TAB ── */}
                                 {activeTab === 'buying' && report?.buying && (
-                                    <div>
+                                    <div style={{ paddingBottom: 60 }}>
+                                        <div style={{ marginBottom: 32 }}>
+                                            <h2 style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 24, fontWeight: 700, color: '#F1F5F9', marginBottom: 8 }}>Buying Journey Analysis</h2>
+                                            <p style={{ color: '#64748B', fontSize: 14 }}>Understand decision-making cycles, loyalty metrics, and conversion barriers.</p>
+                                        </div>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }} className="buying-stats">
                                             {[
                                                 { label: 'Decision Type', value: report.buying.decisionType || 'Considered', icon: '🧠', color: '#8B5CF6' },
@@ -1110,7 +1558,11 @@ Directive: Use the data above to answer specifically. If the user asks for ad co
 
                                 {/* ── ACTION PLAN TAB ── */}
                                 {activeTab === 'plan' && report?.actionPlan && (
-                                    <div>
+                                    <div style={{ paddingBottom: 60 }}>
+                                        <div style={{ marginBottom: 32 }}>
+                                            <h2 style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 24, fontWeight: 700, color: '#F1F5F9', marginBottom: 8 }}>30-Day Growth Plan</h2>
+                                            <p style={{ color: '#64748B', fontSize: 14 }}>A structured, high-impact roadmap designed to deliver measurable results within one month.</p>
+                                        </div>
                                         {report.actionPlan.immediateActions && (
                                             <SectionCard icon="⚡" title="Top Priority Actions" color="#FF6B35" badge="Quick Wins"
                                                 info="The 3 highest-impact actions you should take immediately, ranked by effort vs. impact. These are your fastest path to visible results in the next 7 days.">
@@ -1183,6 +1635,107 @@ Directive: Use the data above to answer specifically. If the user asks for ad co
             `}</style>
                                     </div>
                                 )}
+
+                                {/* ── BLOG WRITER TAB ── */}
+                                {activeTab === 'blog' && (
+                                    <div style={{ maxWidth: 860, margin: '0 auto', paddingBottom: 60 }}>
+                                        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 24, padding: '32px', marginBottom: 24 }}>
+                                            <h2 style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 24, fontWeight: 700, color: '#F1F5F9', marginBottom: 8 }}>AI Content Strategist (E.E.A.T)</h2>
+                                            <p style={{ color: '#64748B', fontSize: 14, marginBottom: 32 }}>Generate search-dominant blogs using your persona's psychological triggers and pain points.</p>
+                                            
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }} className="blog-cfg">
+                                                <div>
+                                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase' }}>Focus Keywords</label>
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="e.g. business scaling, customer journey mapping"
+                                                        value={blogSettings.keywords}
+                                                        onChange={e => setBlogSettings({...blogSettings, keywords: e.target.value})}
+                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px 16px', color: '#fff', outline: 'none' }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase' }}>Target Word Count</label>
+                                                    <select 
+                                                        value={blogSettings.wordCount}
+                                                        onChange={e => setBlogSettings({...blogSettings, wordCount: e.target.value})}
+                                                        style={{ width: '100%', background: 'rgba(255,107,53,0.05)', border: '1px solid rgba(255,107,53,0.1)', borderRadius: 12, padding: '12px 16px', color: '#FF6B35', outline: 'none', cursor: 'pointer' }}
+                                                    >
+                                                        <option value="500">500 Words (Short Form)</option>
+                                                        <option value="800">800 Words (Standard)</option>
+                                                        <option value="1200">1,200 Words (Deep Dive)</option>
+                                                        <option value="2000">2,000+ Words (Pillar Page)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div style={{ marginBottom: 32 }}>
+                                                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase' }}>Writing Tone</label>
+                                                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                                                    {['Professional & Authoritative', 'Casual & Friendly', 'Creative Storytelling', 'Technical & Precise'].map(t => (
+                                                        <button 
+                                                            key={t}
+                                                            onClick={() => setBlogSettings({...blogSettings, tone: t})}
+                                                            style={{ 
+                                                                background: blogSettings.tone === t ? '#FF6B35' : 'rgba(255,255,255,0.05)',
+                                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                                color: blogSettings.tone === t ? '#fff' : '#94A3B8',
+                                                                padding: '8px 16px', borderRadius: 100, fontSize: 13, cursor: 'pointer', transition: '0.2s'
+                                                            }}
+                                                        >{t}</button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <button 
+                                                onClick={handleGenerateBlog}
+                                                disabled={isGeneratingBlog}
+                                                style={{ width: '100%', background: 'linear-gradient(135deg, #FF6B35, #FF8C5A)', border: 'none', color: '#fff', padding: '16px', borderRadius: 14, cursor: 'pointer', fontWeight: 700, fontSize: 16, boxShadow: '0 10px 20px rgba(255,107,53,0.2)' }}
+                                            >
+                                                {isGeneratingBlog ? '✨ Strategizing Content...' : '⚡ Generate SEO-Dominant Blog'}
+                                            </button>
+                                        </div>
+
+                                        {generatedBlog && (
+                                            <div style={{ animation: 'fade-in 0.8s ease' }}>
+                                                {/* SEO Score Card */}
+                                                <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, padding: '24px', marginBottom: 24, display: 'flex', gap: 32, alignItems: 'center' }}>
+                                                    <div style={{ position: 'relative', width: 80, height: 80, flexShrink: 0 }}>
+                                                        <svg width="80" height="80" viewBox="0 0 100 100">
+                                                            <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8"/>
+                                                            <circle cx="50" cy="50" r="45" fill="none" stroke="#10B981" strokeWidth="8" strokeDasharray={`${seoScore?.score * 2.82} 282`} strokeLinecap="round" style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%', transition: 'stroke-dasharray 1s ease' }}/>
+                                                        </svg>
+                                                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 800, color: '#10B981' }}>{seoScore?.score || '0'}</div>
+                                                    </div>
+                                                    <div>
+                                                        <h3 style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', letterSpacing: '0.1em', marginBottom: 8 }}>RANK MATH SEO SCORE</h3>
+                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                                            {seoScore?.checklists?.map((c, i) => <span key={i} style={{ fontSize: 11, background: 'rgba(16,185,129,0.1)', color: '#10B981', padding: '4px 10px', borderRadius: 100 }}>✓ {c}</span>)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <SectionCard icon="📖" title={generatedBlog.title} color="#FF6B35">
+                                                    <div className="blog-output" style={{ color: '#D1D1D1', fontSize: 15, lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+                                                        <ReactMarkdown>{generatedBlog.content}</ReactMarkdown>
+                                                    </div>
+                                                </SectionCard>
+                                                
+                                                {seoScore?.suggestions?.length > 0 && (
+                                                    <SectionCard icon="🚀" title="Expert Recommendations" color="#8B5CF6">
+                                                        <ul style={{ color: '#94A3B8', fontSize: 14, margin: 0, paddingLeft: 20 }}>
+                                                            {seoScore.suggestions.map((s, i) => <li key={i} style={{ marginBottom: 8 }}>{s}</li>)}
+                                                        </ul>
+                                                    </SectionCard>
+                                                )}
+                                            </div>
+                                        )}
+                                        
+                                        <style>{`
+                                            @media (max-width: 600px) { .blog-cfg { grid-template-columns: 1fr !important; } }
+                                        `}</style>
+                                    </div>
+                                )}
                             </div>
                         </>
                     )}
@@ -1191,8 +1744,20 @@ Directive: Use the data above to answer specifically. If the user asks for ad co
                     {activeTab === 'chat' && (
                         <div style={{
                             height: 'calc(100vh - 60px)', display: 'flex', background: '#0A0A0F',
-                            position: 'relative', overflow: 'hidden'
+                            position: 'relative', overflow: 'hidden', flexDirection: 'column'
                         }}>
+                            {/* Chat View Header - Only shown when in chat mode */}
+                            <div style={{ 
+                                padding: '16px 24px', background: 'rgba(255,255,255,0.02)', 
+                                borderBottom: '1px solid rgba(255,255,255,0.03)', display: 'flex', 
+                                alignItems: 'center', justifyContent: 'space-between', zIndex: 10 
+                            }}>
+                                <div>
+                                    <h2 style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 16, fontWeight: 600, color: '#F1F5F9', margin: 0 }}>AI Business Advisor</h2>
+                                    <p style={{ color: '#64748B', fontSize: 12, margin: 0 }}>On-demand strategy and content execution coach.</p>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
 
                             {/* Internal AI Sidebar (History & Context) */}
@@ -1426,55 +1991,48 @@ Directive: Use the data above to answer specifically. If the user asks for ad co
                                 {chatHistory.length > 1 && (
                                     <div style={{ padding: '24px 40px 48px 40px', background: 'linear-gradient(to top, #0A0A0F 85%, transparent)' }}>
                                         <div style={{ maxWidth: 740, margin: '0 auto' }}>
-                                            <div style={{
-                                                background: '#1A1A1A', borderRadius: 16, padding: '10px 18px',
-                                                border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
-                                                display: 'flex', alignItems: 'center', gap: 14
-                                            }}>
-                                                <button style={{ background: 'transparent', border: 'none', color: '#555555', fontSize: 20, cursor: 'pointer' }}>+</button>
-                                                <input
-                                                    type="text"
-                                                    value={chatInput}
-                                                    onChange={e => setChatInput(e.target.value)}
-                                                    onKeyDown={e => { if (e.key === 'Enter') handleChatSubmit(e); }}
-                                                    placeholder="Type your message..."
-                                                    style={{
-                                                        flex: 1, background: 'transparent', border: 'none', color: '#FFFFFF',
-                                                        fontSize: 15, outline: 'none', padding: '12px 0'
-                                                    }}
-                                                />
-                                                <button
-                                                    onClick={handleChatSubmit}
-                                                    disabled={isChatting || !chatInput.trim()}
-                                                    style={{
-                                                        background: chatInput.trim() ? '#E8E8E8' : 'transparent',
-                                                        color: '#000', border: 'none', width: 28, height: 28, borderRadius: '50%',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: chatInput.trim() ? 1 : 0.1,
-                                                        cursor: chatInput.trim() ? 'pointer' : 'not-allowed', fontSize: 16
-                                                    }}
-                                                >↑</button>
+                                            <div style={{ padding: '0 24px 24px' }}>
+                                                {!isReadOnly ? (
+                                                    <div style={{
+                                                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,107,53,0.1)',
+                                                        borderRadius: 12, padding: '4px 12px', display: 'flex', alignItems: 'center', gap: 12,
+                                                        boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+                                                    }}>
+                                                        <input
+                                                            type="text"
+                                                            value={chatInput}
+                                                            onChange={e => setChatInput(e.target.value)}
+                                                            onKeyDown={e => { if (e.key === 'Enter') handleChatSubmit(e); }}
+                                                            placeholder="Type your message..."
+                                                            style={{
+                                                                flex: 1, background: 'transparent', border: 'none', color: '#FFFFFF',
+                                                                fontSize: 15, outline: 'none', padding: '12px 0'
+                                                            }}
+                                                        />
+                                                        <button
+                                                            onClick={handleChatSubmit}
+                                                            disabled={isChatting || !chatInput.trim()}
+                                                            style={{
+                                                                background: chatInput.trim() ? '#E8E8E8' : 'transparent',
+                                                                color: '#000', border: 'none', width: 28, height: 28, borderRadius: '50%',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: chatInput.trim() ? 1 : 0.1,
+                                                                cursor: chatInput.trim() ? 'pointer' : 'not-allowed', fontSize: 16
+                                                            }}
+                                                        >↑</button>
+                                                    </div>
+                                                ) : (
+                                                    <div style={{ textAlign: 'center', color: '#64748B', fontSize: 14, padding: 12 }}>
+                                                        AI Advisor is disabled in Shared Mode.
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
-                                )}
-
-                                <style>{`
-                             @keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-                             @keyframes message-slide-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-                             @keyframes glow-pulse { 0% { box-shadow: 0 0 0px rgba(255,107,53,0); } 50% { box-shadow: 0 0 15px rgba(255,107,53,0.1); } 100% { box-shadow: 0 0 0px rgba(255,107,53,0); } }
-                             @keyframes dot-pulse { 0% { opacity: 0.2; } 50% { opacity: 1; } 100% { opacity: 0.2; } }
-                             .aesthetic-view h2 { font-size: 1.25em; margin-top: 28px; color: #FFFFFF; margin-bottom: 10px; font-weight: 600; }
-                             .aesthetic-view p { margin-bottom: 16px; color: #BBBBBB; font-family: 'Inter Tight', sans-serif; }
-                             .aesthetic-view { font-family: 'Inter Tight', sans-serif; font-size: 0.95em; line-height: 1.7; }
-                             .aesthetic-view strong { color: #FFFFFF; font-weight: 700; font-style: normal; }
-                             .custom-scrollbar::-webkit-scrollbar { width: 5px; }
-                             .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.04); borderRadius: 10px; }
-                             .advisor-sidebar div, .advisor-sidebar button { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-                             @media (max-width: 900px) { .advisor-sidebar { display: none !important; } }
-                            `}</style>
+                                    )}
                                 </div>
                             </div>
-                        )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

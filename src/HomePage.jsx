@@ -282,6 +282,10 @@ export default function HomePage({ user, onOpenAuth }) {
         industry: '',
         businessType: '',
         website: '',
+        instagram: '',
+        facebook: '',
+        linkedin: '',
+        gmb: '',
         currency: 'INR',
         priceTier: '',
         targetAge: '',
@@ -534,11 +538,43 @@ export default function HomePage({ user, onOpenAuth }) {
                                     />
                                 </div>
                                 <div style={fieldStyle}>
-                                    <label style={labelStyle}>Website URL (optional)</label>
+                                    <label style={labelStyle}>Website URL</label>
                                     <input
                                         style={inputStyle} value={form.website} placeholder="https://yourwebsite.com"
                                         onChange={e => set('website', e.target.value)}
                                     />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
+                                    <div>
+                                        <label style={labelStyle}>Instagram Profile</label>
+                                        <input
+                                            style={inputStyle} value={form.instagram} placeholder="@username"
+                                            onChange={e => set('instagram', e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={labelStyle}>Facebook Page</label>
+                                        <input
+                                            style={inputStyle} value={form.facebook} placeholder="fb.com/page"
+                                            onChange={e => set('facebook', e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
+                                    <div>
+                                        <label style={labelStyle}>LinkedIn Profile</label>
+                                        <input
+                                            style={inputStyle} value={form.linkedin} placeholder="linkedin.com/company/..."
+                                            onChange={e => set('linkedin', e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={labelStyle}>Google My Business (GMB)</label>
+                                        <input
+                                            style={inputStyle} value={form.gmb} placeholder="GMB Name or Maps Link"
+                                            onChange={e => set('gmb', e.target.value)}
+                                        />
+                                    </div>
                                 </div>
                             </>
                         )}

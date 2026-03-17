@@ -486,7 +486,9 @@ function StepDescribe({ onNext }) {
   const [location, setLocation] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [gmbUrl, setGmbUrl] = useState("");
-  const [socialUrl, setSocialUrl] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
+  const [facebookUrl, setFacebookUrl] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
   const [pricingTier, setPricing] = useState(null);
   const [additionalNotes, setAdditionalNotes] = useState("");
 
@@ -679,10 +681,22 @@ Business: ${data.businessName}, Industry: ${data.industry}, Pricing: ${data.pric
             onChange={setGmbUrl}
           />
           <Input
-            label="Social Media URL (Optional)"
-            placeholder="https://instagram.com/yourbrand"
-            value={socialUrl}
-            onChange={setSocialUrl}
+            label="Instagram Profile (Optional)"
+            placeholder="@yourbrand"
+            value={instagramUrl}
+            onChange={setInstagramUrl}
+          />
+          <Input
+            label="Facebook Page (Optional)"
+            placeholder="facebook.com/yourbrand"
+            value={facebookUrl}
+            onChange={setFacebookUrl}
+          />
+          <Input
+            label="LinkedIn Profile (Optional)"
+            placeholder="linkedin.com/company/yourbrand"
+            value={linkedinUrl}
+            onChange={setLinkedinUrl}
           />
 
           <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
@@ -914,7 +928,9 @@ Business: ${data.businessName}, Industry: ${data.industry}, Pricing: ${data.pric
                     location,
                     websiteUrl,
                     gmbUrl,
-                    socialUrl,
+                    instagramUrl,
+                    facebookUrl,
+                    linkedinUrl,
                     pricingTier,
                     additionalNotes,
                   })
@@ -1225,7 +1241,9 @@ Business Description: ${business.description}
 Location: ${business.location}
 Website: ${business.websiteUrl || "Not provided"}
 Google My Business: ${business.gmbUrl || "Not provided"}
-Social Media: ${business.socialUrl || "Not provided"}
+Instagram: ${business.instagramUrl || "Not provided"}
+Facebook: ${business.facebookUrl || "Not provided"}
+LinkedIn: ${business.linkedinUrl || "Not provided"}
 Additional Notes: ${business.additionalNotes || "None"}
 
 Persona 1: ${personas[0] ? personas[0].name : ""} (${personas[0] ? personas[0].archetype : ""}) - Goal: ${personas[0] ? personas[0].primaryGoal : ""}
