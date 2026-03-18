@@ -437,7 +437,7 @@ export default function ReportDashboard({ user }) {
                 const currentUserId = user?.uid;
                 const readOnly = ownerId && currentUserId !== ownerId;
                 setIsReadOnly(readOnly);
-
+                if (readOnly) setActiveTab('journey');
 
                 if (data.status === 'done' && data.reportData) {
                     setReport(data.reportData);
@@ -921,22 +921,24 @@ Return JSON:
                                                 <h2 style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 24, fontWeight: 700, color: '#F1F5F9', marginBottom: 8 }}>Business Profile</h2>
                                                 <p style={{ color: '#64748B', fontSize: 14 }}>Manage your digital footprint and core business identity.</p>
                                             </div>
-                                            <button 
-                                                onClick={async () => {
-                                                    if (window.confirm("Updating your profile will reset your current tokens and trigger a full AI re-analysis. Continue?")) {
-                                                        setStatus('generating');
-                                                        await updateDoc(doc(db, 'reports', reportId), { form });
-                                                        await generateFullReport(form, reportId);
-                                                    }
-                                                }}
-                                                style={{
-                                                    background: 'linear-gradient(135deg, #FF6B35, #FF8C5A)',
-                                                    border: 'none', color: '#fff', padding: '12px 24px', borderRadius: 12,
-                                                    fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 20px rgba(255,107,53,0.3)'
-                                                }}
-                                            >
-                                                ⚡ Update & Refresh Analysis
-                                            </button>
+                                            {!isReadOnly && (
+                                                <button 
+                                                    onClick={async () => {
+                                                        if (window.confirm("Updating your profile will reset your current tokens and trigger a full AI re-analysis. Continue?")) {
+                                                            setStatus('generating');
+                                                            await updateDoc(doc(db, 'reports', reportId), { form });
+                                                            await generateFullReport(form, reportId);
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        background: 'linear-gradient(135deg, #FF6B35, #FF8C5A)',
+                                                        border: 'none', color: '#fff', padding: '12px 24px', borderRadius: 12,
+                                                        fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 20px rgba(255,107,53,0.3)'
+                                                    }}
+                                                >
+                                                    ⚡ Update & Refresh Analysis
+                                                </button>
+                                            )}
                                         </div>
 
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
@@ -945,21 +947,24 @@ Return JSON:
                                                 <div style={{ marginBottom: 16 }}>
                                                     <label style={{ display: 'block', fontSize: 12, color: '#64748B', marginBottom: 6 }}>Business Name</label>
                                                     <input 
-                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: '#F1F5F9' }}
+                                                        disabled={isReadOnly}
+                                                        style={{ width: '100%', background: isReadOnly ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: isReadOnly ? '#94A3B8' : '#F1F5F9', cursor: isReadOnly ? 'not-allowed' : 'text' }}
                                                         value={form?.businessName || ''} onChange={e => setForm({...form, businessName: e.target.value})}
                                                     />
                                                 </div>
                                                 <div style={{ marginBottom: 16 }}>
                                                     <label style={{ display: 'block', fontSize: 12, color: '#64748B', marginBottom: 6 }}>Industry</label>
                                                     <input 
-                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: '#F1F5F9' }}
+                                                        disabled={isReadOnly}
+                                                        style={{ width: '100%', background: isReadOnly ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: isReadOnly ? '#94A3B8' : '#F1F5F9', cursor: isReadOnly ? 'not-allowed' : 'text' }}
                                                         value={form?.industry || ''} onChange={e => setForm({...form, industry: e.target.value})}
                                                     />
                                                 </div>
                                                 <div style={{ marginBottom: 16 }}>
                                                     <label style={{ display: 'block', fontSize: 12, color: '#64748B', marginBottom: 6 }}>Business Type</label>
                                                     <input 
-                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: '#F1F5F9' }}
+                                                        disabled={isReadOnly}
+                                                        style={{ width: '100%', background: isReadOnly ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: isReadOnly ? '#94A3B8' : '#F1F5F9', cursor: isReadOnly ? 'not-allowed' : 'text' }}
                                                         value={form?.businessType || ''} onChange={e => setForm({...form, businessType: e.target.value})}
                                                     />
                                                 </div>
@@ -970,28 +975,32 @@ Return JSON:
                                                 <div style={{ marginBottom: 16 }}>
                                                     <label style={{ display: 'block', fontSize: 12, color: '#64748B', marginBottom: 6 }}>Website</label>
                                                     <input 
-                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: '#F1F5F9' }}
+                                                        disabled={isReadOnly}
+                                                        style={{ width: '100%', background: isReadOnly ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: isReadOnly ? '#94A3B8' : '#F1F5F9', cursor: isReadOnly ? 'not-allowed' : 'text' }}
                                                         value={form?.website || ''} onChange={e => setForm({...form, website: e.target.value})}
                                                     />
                                                 </div>
                                                 <div style={{ marginBottom: 16 }}>
                                                     <label style={{ display: 'block', fontSize: 12, color: '#64748B', marginBottom: 6 }}>Instagram</label>
                                                     <input 
-                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: '#F1F5F9' }}
+                                                        disabled={isReadOnly}
+                                                        style={{ width: '100%', background: isReadOnly ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: isReadOnly ? '#94A3B8' : '#F1F5F9', cursor: isReadOnly ? 'not-allowed' : 'text' }}
                                                         value={form?.instagram || ''} onChange={e => setForm({...form, instagram: e.target.value})}
                                                     />
                                                 </div>
                                                 <div style={{ marginBottom: 16 }}>
                                                     <label style={{ display: 'block', fontSize: 12, color: '#64748B', marginBottom: 6 }}>LinkedIn</label>
                                                     <input 
-                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: '#F1F5F9' }}
+                                                        disabled={isReadOnly}
+                                                        style={{ width: '100%', background: isReadOnly ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: isReadOnly ? '#94A3B8' : '#F1F5F9', cursor: isReadOnly ? 'not-allowed' : 'text' }}
                                                         value={form?.linkedin || ''} onChange={e => setForm({...form, linkedin: e.target.value})}
                                                     />
                                                 </div>
                                                 <div style={{ marginBottom: 16 }}>
                                                     <label style={{ display: 'block', fontSize: 12, color: '#64748B', marginBottom: 6 }}>GMB Link</label>
                                                     <input 
-                                                        style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: '#F1F5F9' }}
+                                                        disabled={isReadOnly}
+                                                        style={{ width: '100%', background: isReadOnly ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: isReadOnly ? '#94A3B8' : '#F1F5F9', cursor: isReadOnly ? 'not-allowed' : 'text' }}
                                                         value={form?.gmb || ''} onChange={e => setForm({...form, gmb: e.target.value})}
                                                     />
                                                 </div>
@@ -1003,14 +1012,16 @@ Return JSON:
                                             <div style={{ marginBottom: 16 }}>
                                                 <label style={{ display: 'block', fontSize: 12, color: '#64748B', marginBottom: 6 }}>Biggest Business Challenge</label>
                                                 <textarea 
-                                                    style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: '#F1F5F9', minHeight: 80 }}
+                                                    disabled={isReadOnly}
+                                                    style={{ width: '100%', background: isReadOnly ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: isReadOnly ? '#94A3B8' : '#F1F5F9', minHeight: 80, cursor: isReadOnly ? 'not-allowed' : 'text' }}
                                                     value={form?.biggestChallenge || ''} onChange={e => setForm({...form, biggestChallenge: e.target.value})}
                                                 />
                                             </div>
                                             <div style={{ marginBottom: 16 }}>
                                                 <label style={{ display: 'block', fontSize: 12, color: '#64748B', marginBottom: 6 }}>Main Product/Service</label>
                                                 <textarea 
-                                                    style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: '#F1F5F9', minHeight: 80 }}
+                                                    disabled={isReadOnly}
+                                                    style={{ width: '100%', background: isReadOnly ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 12px', color: isReadOnly ? '#94A3B8' : '#F1F5F9', minHeight: 80, cursor: isReadOnly ? 'not-allowed' : 'text' }}
                                                     value={form?.mainProduct || ''} onChange={e => setForm({...form, mainProduct: e.target.value})}
                                                 />
                                             </div>
